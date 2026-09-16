@@ -1,6 +1,6 @@
-st.title('Manufacturing and job work')
-section=st.radio('Manufacturing workspace',['Production / kits','Jobs and material consumption'],key='manufacturing_section')
-if section=='Production / kits':
+st.title('Assembly and jobs')
+section=st.radio('Operations workspace',['Assembly / kits','Jobs and material consumption'],key='manufacturing_section')
+if section=='Assembly / kits':
     pid=pick_product('Finished product / kit',key='finished_product')
     recipe=store.recipes(pid)
     if recipe:grid([{'Component':r['item_name'],'SKU':r['item_code'],'Quantity per finished unit':quantity(r['qty']),'Unit':r['unit']} for r in recipe])
@@ -13,16 +13,16 @@ if section=='Production / kits':
                 save=st.form_submit_button('Save bill of materials',disabled=not store.allowed('catalogue'))
             if save:act('recipe',lambda:store.save_recipe(pid,components,actor=actor),'Bill of materials saved.')
     if recipe:
-        st.subheader('Record completed production / assemble a kit')
-        lid=pick_location('Production location',key='production_location')
+        st.subheader('Record completed assembly / kit')
+        lid=pick_location('Assembly location',key='production_location')
         batch=pick_batch(pid,lid,key='production_batch')
         with st.form(f'assemble_{pid}'):
             qty=st.text_input('Finished quantity',value='1')
             overhead=st.text_input('Total labour / subcontracting / overhead cost (₹)',value='0')
-            reference=st.text_input('Production job / batch reference')
-            submit=st.form_submit_button('Record production',disabled=not store.allowed('inventory'))
-        if submit:act('assemble',lambda:store.assemble(pid,qty,lid,reference,overhead,batch,actor=actor,token=operation_key('assemble')),lambda cost:f'Production recorded. Output cost ₹{amount(cost)}.')
-        st.caption('Components are consumed together, and finished stock receives their cost plus overhead. For a subcontractor, transfer materials to its location first and record production there.')
+            reference=st.text_input('Assembly job / batch reference')
+            submit=st.form_submit_button('Record assembly',disabled=not store.allowed('inventory'))
+        if submit:act('assemble',lambda:store.assemble(pid,qty,lid,reference,overhead,batch,actor=actor,token=operation_key('assemble')),lambda cost:f'Assembly recorded. Output cost ₹{amount(cost)}.')
+        st.caption('Components are consumed together, and finished stock receives their cost plus overhead. This can represent a kit, bundle, repair set, service job or production run.')
 else:
     jobs=store.jobs()
     if jobs:grid([{'Job':j['name'],'Customer':j['customer'],'Material cost ₹':amount(j['material_cost']),'Budget ₹':amount(j['budget'])} for j in jobs])
@@ -42,4 +42,4 @@ else:
             qty=st.text_input('Consumed quantity',value='1')
             submit=st.form_submit_button('Record material consumption',disabled=not store.allowed('inventory'))
         if submit:act('job_use',lambda:store.consume_job(jid,pid,qty,lid,actor=actor,token=operation_key('job_use')),lambda cost:f'Material use recorded at ₹{amount(cost)}.')
-    st.caption('Use job consumption for materials used on services or projects. Production already consumes its bill of materials; do not record those same components twice.')
+    st.caption('Use job consumption for materials used on services, projects or field work. Assembly already consumes its bill of materials; do not record those same components twice.')

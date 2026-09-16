@@ -1,4 +1,4 @@
-# Stocklist — manufacturing and job work
+# Stocklist — general inventory and operations
 
 ## Delivered feature matrix
 
@@ -13,9 +13,9 @@ One business per database, multiple owned-stock locations, INR prices and authen
 | Movements and counts | Stock movements | Receipts, sales/issues, returns, damage and counts per location; stale counts are rejected |
 | Alternate units | Tracking and units | Product-specific movement conversion into the base stock unit; rejects precision loss |
 | Batches, expiry and serials | Tracking and units | Traceable movements; earliest-expiry dispatch; expired sales/consumption blocked; one item per serial |
-| BOMs and kits | Manufacturing and jobs | Component quantities per output unit; prevents recursive recipes |
-| Production and subcontracting | Manufacturing and jobs | Atomic component consumption and output receipt, including entered labour/subcontracting overhead |
-| Job material use | Manufacturing and jobs | Materials and cost per customer/project/job; material budgets |
+| BOMs and kits | Assembly and jobs | Component quantities per output unit; prevents recursive recipes |
+| Assembly and outside work | Assembly and jobs | Atomic component consumption and output receipt, including entered labour/subcontracting overhead |
+| Job material use | Assembly and jobs | Materials and cost per customer/project/job; material budgets |
 | Replenishment | Overview | Available internal stock, reservations, open orders, recent consumption, supplier lead time, safety stock, MOQ and pack rules |
 | Approval budgets | Settings; Purchase orders | Monthly goods-value limit checked when approving a PO |
 | Quotations and price history | Quotations and bills | Compare prices, freight, MOQ, delivery time, validity and terms; create a draft from a quote |
@@ -24,11 +24,11 @@ One business per database, multiple owned-stock locations, INR prices and authen
 | Landed cost | Goods receipts; bill review | Receipt freight allocated by goods value into stock cost; bill-level landed-cost comparison |
 | Sales and tax documents | Sales and invoices | Customer invoices, entered GST rates, intra/inter-state tax splits, linked partial credit returns, payments and printable documents |
 | Customer commitments | Customer orders | Quote validity, confirmed orders, delivery dates, partial deliveries, pending quantities and delivery-linked invoicing without a second stock issue |
-| Production work orders | Work orders | Saved recipe plan, operator and stages, partial completion, actual material WIP, labour and machine costs |
+| Work orders | Work orders | Saved recipe plan, operator and stages, partial completion, actual material WIP, labour and machine costs |
 | Material requirements | Material planning | Multilevel recipes, chronological shared-stock allocation, dated incoming purchases and open-work-order supply/demand |
-| Quality controls | Quality inspections | Incoming / production / final checks, stock holds, accepted/rejected quantities, rework, reinspection and disposal |
-| Ownership and challans | Job-work tracking | Customer material custody separate from company stock; subcontractor outward/inward records, partial returns and reconciliation |
-| Production cost analysis | Production costs | Scrap / recovery, actual labour/machine costs, recipe consumption variance, allocated output cost and remaining WIP |
+| Quality controls | Quality checks | Incoming / work / final checks, stock holds, accepted/rejected quantities, rework, reinspection and disposal |
+| Ownership and outside records | Outside work tracking | Customer material custody separate from company stock; outside-party outward/inward records, partial returns and reconciliation |
+| Cost analysis | Cost analysis | Scrap / recovery, actual labour/machine costs, recipe consumption variance, allocated output cost and remaining WIP |
 | Attachments and scanning | Documents | Database-backed PDF/images/text; local PDF extraction, Windows OCR or optional Tesseract; review before financial entry |
 | Returnables | Returnables and repairs | Holder, due date, outstanding balance and partial returns; ownership retained |
 | Warranty and repair | Returnables and repairs | Serial warranty dates, customer faults and repair outcomes |
@@ -65,7 +65,7 @@ Public business actions enforce role permissions. Normal database access require
 
 ## Explicit boundaries
 
-- Manufacturing supports work-order stages, operators, partial output, WIP, actual labour / machine costs, scrap recovery and quality inspection. Finite machine-capacity scheduling and payroll are not included. See [factory workflows](FACTORY_WORKFLOWS.md) for allocation rules.
+- Advanced operations support work-order stages, operators, partial output, WIP, actual labour / machine costs, scrap recovery and quality checks. Finite capacity scheduling and payroll are not included. See [operations workflows](FACTORY_WORKFLOWS.md) for allocation rules.
 - Company material at subcontractors remains owned stock. Customer-owned material is kept in a separate custody ledger and never increases company inventory value. Operational challans and reconciliation are supported; job-work tax filings are not automated.
 - Kits are assembled from BOMs before sale. Purchase orders, invoices and BOMs use the base stock unit; alternate-unit conversion is available for stock movements.
 - Configure tracking before receiving stock. Existing tracked history cannot be reclassified. Serial receipts are recorded one serial per action/line.

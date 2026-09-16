@@ -1,4 +1,4 @@
-# Customer commitments and factory workflows
+# Customer commitments and operations workflows
 
 ## Start with the six new sidebar screens
 
@@ -7,13 +7,13 @@
 | Customer orders | Prepare customer quotation → confirm order → partial deliveries → invoice each delivery |
 | Work orders | Plan output and operator → release → record material WIP and costs → partial / final output |
 | Material planning | Net confirmed commitments and open work orders against free stock and dated supplies |
-| Quality inspections | Quarantine → accept / reject → rework and reinspection or disposal |
-| Job-work tracking | Record material owner → inward / outward challans → partial returns and reconciliation |
-| Production costs | Record scrap / recovery → compare consumption and cost with the saved production plan |
+| Quality checks | Quarantine → accept / reject → rework and reinspection or disposal |
+| Outside work tracking | Record material owner → inward / outward challans → partial returns and reconciliation |
+| Cost analysis | Record scrap / recovery → compare consumption and cost with the saved work plan |
 
-Create customers in **Sales and invoices** and recipes in **Manufacturing and jobs** first.
+Create customers in **Sales and invoices** and recipes in **Assembly and jobs** first.
 The earlier quick-assembly and project-consumption workflows remain available. Do not
-record the same physical production through both quick assembly and a work order.
+record the same physical work through both quick assembly and a work order.
 
 ## 1. Customer quotations, orders and delivery commitments
 
@@ -32,12 +32,12 @@ Delivery dates can be changed with a recorded reason. Cancelling an undelivered 
 preserves earlier deliveries and invoices. Open linked work orders must first be completed
 or cancelled. Overdue commitments appear in Exceptions.
 
-## 2. Production work orders and work in progress
+## 2. Work orders and work in progress
 
 A work order saves planned output, stock location, operator, due date, stages, estimated
 overhead and a snapshot of the recipe and component prices. Later recipe edits do not
 change an existing plan. A work order can link to a customer order line or make to stock.
-Linked planned quantities cannot exceed that order line's production allocation.
+Linked planned quantities cannot exceed that order line's work allocation.
 
 Release the order, then record actual material consumption into WIP. These entries reduce
 material inventory and carry its actual recorded cost into the job. Record labour hours
@@ -51,7 +51,7 @@ costs and output. Material consumption below the recipe requires a variance expl
 Only orders without actual material, cost or output entries can be cancelled.
 
 Every work-order output enters final-inspection quarantine automatically. Completed
-production and quality release are separate events. The operator/stage/due-date table
+work and quality release are separate events. The operator/stage/due-date table
 and Exceptions identify delayed open work.
 
 ## 3. Material requirements planning
@@ -70,12 +70,12 @@ confirmed supply. The plan can be exported as CSV.
 This release pools internal warehouses and uses work-order due dates for material demand.
 It does not calculate machine capacity, routing lead-time offsets or guarantee that a
 scheduled work order will finish. Arrange stock transfers and review capacity separately.
-Planning is advisory; purchasing and production are created through their normal screens.
+Planning is advisory; purchasing and work orders are created through their normal screens.
 
-## 4. Quality inspection and rework
+## 4. Quality checks and rework
 
 Purchase receipts can enter quarantine in the same transaction as receipt using the
-inspection checkbox. Existing stock can be held for an incoming, production or final
+inspection checkbox. Existing stock can be held for an incoming, work or final
 check. Tracked products require an explicit batch/serial; a hold cannot overlap another
 hold or consume reserved quantities.
 
@@ -90,9 +90,9 @@ Checks apply to stock quantities; destructive test samples, defect-code catalogu
 machine measurements and laboratory integrations are not automated. For older quick
 assembly or manual receipts, start an inspection explicitly when one is required.
 
-## 5. Ownership-aware job work
+## 5. Ownership-aware outside work
 
-Choose **company** or **customer** ownership when opening a job-work order.
+Choose **company** or **customer** ownership when opening an outside-work order.
 
 - Company outward challans move stock, with its cost, to a dedicated location for that
   contract. Partial returns restore stock to the sending warehouse; confirmed consumption
@@ -107,7 +107,7 @@ Each material line shows total received/sent, held outside, on site, returned, c
 and scrap. Events produce downloadable operational challans and a CSV history. Closure
 requires every quantity to be returned, consumed or scrapped. Overdue unreconciled jobs
 appear in Exceptions. Conversion of customer-owned inputs into different finished SKUs,
-subcontractor service billing and statutory job-work filings need separate workflows.
+outside-party service billing and statutory filings need separate workflows.
 
 ## 6. Scrap and cost analysis
 
@@ -125,8 +125,8 @@ realised profit; final margin depends on costs, deliveries, credits and business
 ## Access, upgrade and sample data
 
 Owners/managers can use all these workflows. Accountants manage customer quotations,
-orders and delivery invoicing. Warehouse staff handle dispatch, production, quality and
-job-work custody. Read-only users can review and download documents but cannot mutate
+orders and delivery invoicing. Warehouse staff handle dispatch, work orders, quality and
+outside-work custody. Read-only users can review and download documents but cannot mutate
 records. Every new mutation has an explicit service permission and audit entry.
 
 Database version 3 is additive. An automatic `.before-v3-*.sqlite3` backup precedes
@@ -135,6 +135,6 @@ use a write lock, bounded integer quantities, validation and replay-safe operati
 
 The demo launcher adds a repeatable operations pack: open quotation, partially delivered
 order and invoice, partially completed work order, labour/machine costs, recovered
-offcuts, rejected incoming material, and customer/company job-work examples. Reloading
-or resuming the completed pack preserves subsequent demo edits. Production startup
+offcuts, rejected incoming material, and customer/company outside-work examples. Reloading
+or resuming the completed pack preserves subsequent demo edits. Normal business startup
 does not seed these records.

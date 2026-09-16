@@ -1,7 +1,7 @@
-st.title('Scrap and production cost analysis')
-st.caption('Compare recipe allowances with actual consumption, labour, machine time and recovered offcut value.')
+st.title('Scrap and cost analysis')
+st.caption('Compare planned allowances with actual consumption, labour, machine time and recovered value.')
 orders=store.work_orders()
-if not orders:st.info('Plan a work order to start tracking production costs.'); st.stop()
+if not orders:st.info('Plan a work order to start tracking costs.'); st.stop()
 lookup={w['id']:w for w in orders}; wid=st.selectbox('Cost analysis for work order',list(lookup),format_func=lambda i:f'{lookup[i]["number"]} · {lookup[i]["item_name"]}')
 w=store.work_order_detail(wid)
 if w['state'] not in ('completed','cancelled'):

@@ -1,4 +1,4 @@
-// Read-only browser smoke test against the manufacturing demo.
+// Read-only browser smoke test against the sample business demo.
 const {chromium}=require('playwright');
 const path=require('path');
 (async()=>{
@@ -12,9 +12,9 @@ const path=require('path');
     await page.getByRole('button',{name:/Owner demo$/}).waitFor({timeout:60000});
     await page.getByRole('button',{name:/Owner demo$/}).click();
     await page.getByRole('heading',{name:'Inventory overview'}).waitFor({timeout:60000});
-    const screens=[['Customer orders','Customer quotations and sales orders'],['Work orders','Production work orders'],
-      ['Material planning','Material requirements planning'],['Quality inspections','Quality inspections'],
-      ['Job-work tracking','Advanced job-work tracking'],['Production costs','Scrap and production cost analysis']];
+    const screens=[['Customer orders','Customer quotations and sales orders'],['Work orders','Work orders'],
+      ['Material planning','Material requirements planning'],['Quality checks','Quality checks'],
+      ['Outside work tracking','Outside work tracking'],['Cost analysis','Scrap and cost analysis']];
     const checks=[];
     for(const [nav,title] of screens){
       await page.getByTestId('stSidebar').getByTestId('stRadioOption').filter({hasText:nav}).click();
@@ -29,7 +29,7 @@ const path=require('path');
     }
     await page.setViewportSize({width:390,height:844});
     await page.getByRole('heading',{name:screens.at(-1)[1]}).scrollIntoViewIfNeeded();
-    await page.screenshot({path:path.join(output,'production-costs-mobile.png'),fullPage:true});
+    await page.screenshot({path:path.join(output,'cost-analysis-mobile.png'),fullPage:true});
     const mobileOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth);
     if(errors.length||mobileOverflow)throw new Error(JSON.stringify({errors,mobileOverflow}));
     console.log(JSON.stringify({checks,mobileOverflow,browserErrors:errors}));

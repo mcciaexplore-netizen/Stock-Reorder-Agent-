@@ -121,19 +121,19 @@ def order_lines(order):
 
 extra_pages = {'Locations and reservations':'locations.py', 'Tracking and units':'tracking.py',
                'Customer orders':'customer_orders.py', 'Work orders':'work_orders.py', 'Material planning':'material_planning.py',
-               'Quality inspections':'quality.py', 'Job-work tracking':'jobwork.py', 'Production costs':'production_costs.py',
-               'Manufacturing and jobs':'manufacturing.py', 'Quotations and bills':'purchasing.py',
+               'Quality checks':'quality.py', 'Outside work tracking':'jobwork.py', 'Cost analysis':'production_costs.py',
+               'Assembly and jobs':'manufacturing.py', 'Quotations and bills':'purchasing.py',
                'Sales and invoices':'sales.py', 'Documents':'documents.py', 'Returnables and repairs':'returns.py',
                'Reports':'reports.py', 'Exceptions':'exceptions.py', 'Offline entry':'offline.py', 'Settings':'settings.py'}
 pages = ['Overview', 'Products', 'Stock movements', 'Locations and reservations', 'Tracking and units',
-         'Customer orders', 'Work orders', 'Material planning', 'Quality inspections', 'Job-work tracking', 'Production costs',
-         'Manufacturing and jobs', 'Quotations and bills', 'Purchase orders', 'Sales and invoices',
+         'Customer orders', 'Work orders', 'Material planning', 'Quality checks', 'Outside work tracking', 'Cost analysis',
+         'Assembly and jobs', 'Quotations and bills', 'Purchase orders', 'Sales and invoices',
          'Suppliers', 'Returnables and repairs', 'Reports', 'Exceptions', 'Documents',
          'Offline entry', 'Import and backup', 'Settings']
 translations = {'Overview':'अवलोकन', 'Products':'उत्पाद', 'Suppliers':'आपूर्तिकर्ता', 'Stock movements':'स्टॉक लेनदेन',
     'Customer orders':'ग्राहक आदेश', 'Work orders':'उत्पादन आदेश', 'Material planning':'सामग्री योजना',
-    'Quality inspections':'गुणवत्ता निरीक्षण', 'Job-work tracking':'जॉब वर्क ट्रैकिंग', 'Production costs':'उत्पादन लागत',
-    'Purchase orders':'खरीद आदेश', 'Import and backup':'आयात और बैकअप', 'Manufacturing and jobs':'उत्पादन और जॉब',
+    'Quality checks':'गुणवत्ता जांच', 'Outside work tracking':'बाहरी काम ट्रैकिंग', 'Cost analysis':'लागत विश्लेषण',
+    'Purchase orders':'खरीद आदेश', 'Import and backup':'आयात और बैकअप', 'Assembly and jobs':'असेंबली और जॉब',
     'Locations and reservations':'स्थान और आरक्षण', 'Tracking and units':'बैच और इकाइयाँ', 'Sales and invoices':'बिक्री और बिल',
     'Quotations and bills':'कोटेशन और खरीद बिल', 'Documents':'दस्तावेज़', 'Returnables and repairs':'वापसी और मरम्मत',
     'Reports':'रिपोर्ट', 'Exceptions':'ध्यान देने योग्य', 'Offline entry':'ऑफ़लाइन प्रविष्टि', 'Settings':'सेटिंग्स'}
@@ -486,7 +486,7 @@ with page_content.container(key='workspace_content'):
                     receive = st.form_submit_button('Record goods received', type='primary')
                 if receive:
                     act(key+'_receive', lambda: store.receive_po(oid, received, actor=actor, token=operation_key(key+'_receive'), reference=reference,
-                        location_id=receipt_location,batches={k:v for k,v in receipt_batches.items() if v is not None},freight=freight,quality_hold=quality_hold), 'Goods received and stock updated. Inspect quarantined receipts on Quality inspections.')
+                        location_id=receipt_location,batches={k:v for k,v in receipt_batches.items() if v is not None},freight=freight,quality_hold=quality_hold), 'Goods received and stock updated. Inspect quarantined receipts on Quality checks.')
             if order['state'] in ('draft', 'approved', 'sent', 'partial'):
                 with st.expander('Cancel remaining order'):
                     with st.form(key+'_cancel'):

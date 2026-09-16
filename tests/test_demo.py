@@ -104,7 +104,7 @@ class DemoTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             viewer_store.identity()
 
-    def test_production_sign_in_has_no_demo_buttons(self):
+    def test_normal_sign_in_has_no_demo_buttons(self):
         self.provision()
         with patch.object(config, 'DATABASE_PATH', self.path), patch.object(config, 'DEMO_ACCESS_PATH', ''):
             app = AppTest.from_file(str(ROOT / 'streamlit_app.py'), default_timeout=60).run()
@@ -126,7 +126,7 @@ class DemoTests(unittest.TestCase):
                 self.assertFalse(any(b.key and b.key.startswith('demo_login_') for b in app.button))
                 if profile['role'] == 'owner':
                     for page in ['Products', 'Purchase orders', 'Locations and reservations', 'Tracking and units',
-                                 'Manufacturing and jobs', 'Quotations and bills', 'Sales and invoices', 'Documents',
+                                 'Assembly and jobs', 'Quotations and bills', 'Sales and invoices', 'Documents',
                                  'Returnables and repairs', 'Reports', 'Exceptions', 'Offline entry', 'Settings']:
                         app.radio(key='page').set_value(page).run()
                         self.assertFalse(app.exception, page)

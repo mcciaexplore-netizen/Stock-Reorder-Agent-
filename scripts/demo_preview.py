@@ -21,7 +21,7 @@ def main():
         manifest = json.loads(access_path.read_text(encoding='utf-8'))
         database = Path(manifest['database']).resolve()
     else:
-        folder = Path(tempfile.mkdtemp(prefix='stocklist-manufacturing-demo-'))
+        folder = Path(tempfile.mkdtemp(prefix='stocklist-business-demo-'))
         database, access_path = folder / 'demo.sqlite3', folder / 'demo-access.json'
     os.environ.update(DATABASE_PATH=str(database), STOCKLIST_DEMO_ACCESS=str(access_path),
                       GMAIL_USER='', GMAIL_APP_PASSWORD='', DRY_RUN='true')

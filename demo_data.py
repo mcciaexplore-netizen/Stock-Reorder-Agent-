@@ -1,10 +1,10 @@
-"""Repeatable manufacturing examples, created through the normal business services."""
+"""Repeatable sample business examples, created through the normal business services."""
 from datetime import date, timedelta
 import json
 
 from inventory import ValidationError, amount
 
-SEED_KEY = '_demo_manufacturing_v1'
+SEED_KEY = '_demo_general_business_v1'
 ACTOR = 'Demo setup'
 
 
@@ -21,16 +21,16 @@ def seed_sample_data(store):
         db.execute('INSERT OR IGNORE INTO settings VALUES(?,?)', (SEED_KEY, json.dumps(state)))
     anchor = date.fromisoformat(state['date'])
     day = lambda offset: (anchor + timedelta(days=offset)).isoformat()
-    token = lambda name: 'demo-manufacturing-v1:' + name
+    token = lambda name: 'demo-general-business-v1:' + name
 
     def find_or_create(rows, key, value, create):
         match = next((r for r in rows if r[key] == value), None)
         return match['id'] if match else create()
 
     settings = store.settings()
-    defaults = {'business_name': 'Demo manufacturing company',
+    defaults = {'business_name': 'Demo stock and operations company',
                 'business_address': 'Sample industrial estate, Pune, Maharashtra',
-                'default_industry': 'manufacturing'}
+                'default_industry': 'general'}
     missing = {k: v for k, v in defaults.items() if not settings.get(k)}
     if missing:
         store.save_settings(missing, actor=ACTOR)

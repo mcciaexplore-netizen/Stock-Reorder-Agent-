@@ -1,8 +1,8 @@
 from datetime import date, timedelta
 import json
 
-st.title('Production work orders')
-st.caption('Plan the job, release it to an operator, consume materials into work in progress and record output in parts.')
+st.title('Work orders')
+st.caption('Plan an internal job, assign responsibility, consume materials into work in progress and record output in parts.')
 if products:
     with st.expander('Plan a work order'):
         pid=pick_product('Work-order finished product',key='wo_product')
@@ -17,14 +17,14 @@ if products:
             a,b=st.columns(2)
             qty=a.text_input('Planned output quantity',value='1')
             operator=b.text_input('Assigned operator')
-            due=st.date_input('Production due date',value=date.today()+timedelta(days=7))
-            stages=st.text_input('Production stages, separated by commas',value='Preparation, Processing, Assembly, Final inspection')
+            due=st.date_input('Work due date',value=date.today()+timedelta(days=7))
+            stages=st.text_input('Work stages, separated by commas',value='Preparation, Processing, Assembly, Final check')
             overhead=st.text_input('Planned labour, machine and overhead total ₹',value='0')
             notes=st.text_area('Work instructions')
             submit=st.form_submit_button('Create work order',disabled=not store.allowed('inventory'))
         if submit:act('wo_create',lambda:store.create_work_order(pid,qty,lid,operator,due.isoformat(),[s.strip() for s in stages.split(',')],notes,overhead,order_line,actor=actor,token=operation_key('wo_create')),'Work order planned with a saved copy of its recipe.')
 orders=store.work_orders()
-if not orders:st.info('Create a recipe in Manufacturing and jobs, then plan your first work order.'); st.stop()
+if not orders:st.info('Create a recipe in Assembly and jobs, then plan your first work order.'); st.stop()
 grid([{'Work order':w['number'],'Product':w['item_name'],'Operator':w['operator'],'Stage':json.loads(w['stages'])[w['stage_index']],
     'Status':w['state'],'Due':w['due_date'],'Planned':quantity(w['planned']),'Completed':quantity(w['completed']),'Unit':w['unit'],
     'Overdue':w['due_date']<date.today().isoformat() and w['state'] not in ('completed','cancelled')} for w in orders])
@@ -36,17 +36,17 @@ b.metric('Work in progress ₹',amount(w['wip_value']))
 c.metric('Actual job cost ₹',amount(w['total']))
 grid([{'Material':r['item_name'],'Planned':quantity(r['planned_qty']),'Consumed into WIP':quantity(r['actual']),'Scrap included':quantity(r['scrap']),'Unit':r['unit']} for r in w['materials']])
 if w['state'] not in ('completed','cancelled'):
-    with st.expander('Release / update production progress',expanded=w['state']=='planned'):
+    with st.expander('Release / update work progress',expanded=w['state']=='planned'):
         with st.form(f'wo_stage_{wid}_{w["stage_index"]}'):
-            stage=st.selectbox('Current or next production stage',list(range(w['stage_index'],min(w['stage_index']+2,len(stages)))),format_func=lambda i:stages[i])
+            stage=st.selectbox('Current or next work stage',list(range(w['stage_index'],min(w['stage_index']+2,len(stages)))),format_func=lambda i:stages[i])
             operator=st.text_input('Operator responsible',value=w['operator'])
-            due=st.date_input('Revised production due',value=date.fromisoformat(w['due_date']))
+            due=st.date_input('Revised work due',value=date.fromisoformat(w['due_date']))
             note=st.text_input('Progress / delay note')
             submit=st.form_submit_button('Release / save progress',disabled=not store.allowed('inventory'))
-        if submit:act('wo_stage',lambda:store.advance_work_order(wid,stage,operator,due.isoformat(),note,actor=actor),'Production progress updated.')
+        if submit:act('wo_stage',lambda:store.advance_work_order(wid,stage,operator,due.isoformat(),note,actor=actor),'Work progress updated.')
     if w['state']!='planned':
         with st.expander('Consume materials into work in progress'):
-            st.caption('Record actual material used. Finished output will use these costs; do not also record the same production on the quick assembly screen.')
+            st.caption('Record actual material used. Finished output will use these costs; do not also record the same work on the quick assembly screen.')
             with st.form(f'wo_materials_{wid}'):
                 quantities={r['product_id']:st.text_input(f'{r["item_name"]} quantity to consume · {r["unit"]}',value='0',key=f'wo_use_{wid}_{r["product_id"]}') for r in w['materials']}
                 submit=st.form_submit_button('Consume work-order materials',disabled=not store.allowed('inventory'))
@@ -68,11 +68,11 @@ if w['state'] not in ('completed','cancelled'):
                 submit=st.form_submit_button('Record output for quality inspection',disabled=not store.allowed('inventory'))
             if submit:
                 if not checked:st.error('Review the recorded materials, scrap and costs before completing output.')
-                else:act('wo_output',lambda:store.complete_work_output(wid,qty,batch,note,actor=actor,token=operation_key('wo_output')),'Output recorded in quarantine. Release it through Quality inspections.')
+                else:act('wo_output',lambda:store.complete_work_output(wid,qty,batch,note,actor=actor,token=operation_key('wo_output')),'Output recorded in quarantine. Release it through Quality checks.')
             st.caption('Partial output receives a proportional share of current WIP cost. Final completion receives the remaining cost and closes the order.')
     with st.expander('Cancel an unstarted work order'):
         with st.form(f'wo_cancel_{wid}'):
             reason=st.text_input('Work-order cancellation reason')
             cancel=st.form_submit_button('Cancel work order',disabled=not store.allowed('inventory'))
         if cancel:act('wo_cancel',lambda:store.cancel_work_order(wid,reason,actor=actor),'Work order cancelled.')
-st.caption('Use Production costs to record scrap / recoverable offcuts and compare planned and actual consumption.')
+st.caption('Use Cost analysis to record scrap / recoverable items and compare planned and actual consumption.')

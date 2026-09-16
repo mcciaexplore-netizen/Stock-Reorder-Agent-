@@ -294,7 +294,7 @@ class OperationsUITests(unittest.TestCase):
         self.addCleanup(fixture.doCleanups)
         s=fixture.s
         s.bootstrap('owner','Owner','correct horse battery staple')
-        pages=['Customer orders','Work orders','Material planning','Quality inspections','Job-work tracking','Production costs']
+        pages=['Customer orders','Work orders','Material planning','Quality checks','Outside work tracking','Cost analysis']
         with patch.object(config,'DATABASE_PATH',fixture.path), patch.object(config,'DEMO_ACCESS_PATH',None):
             app=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'streamlit_app.py'),default_timeout=30)
             app.session_state['auth_token']=s.session_token; app.run()

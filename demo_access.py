@@ -9,7 +9,7 @@ from inventory import ValidationError
 
 PROFILES = {
     'owner': ('Owner demo', 'Explore every feature and manage the sample business.'),
-    'warehouse': ('Warehouse demo', 'Receive stock, transfer materials and record production.'),
+    'warehouse': ('Warehouse demo', 'Receive stock, transfer items and record operations.'),
     'accountant': ('Accountant demo', 'Review bills, sales invoices, payments and reports.'),
     'viewer': ('Read-only demo', 'Browse the sample business without changing records.'),
 }

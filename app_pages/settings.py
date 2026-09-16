@@ -15,7 +15,7 @@ with st.form('business_settings'):
     submit=st.form_submit_button('Save business settings',type='primary')
 if submit:
     act('settings',lambda:store.save_settings({'business_name':name,'business_address':address,'gstin':gst,'state_code':state,
-        'monthly_budget':budget,'backup_enabled':str(backups).lower(),'backup_days':str(days),'default_industry':'manufacturing','language':language},actor=actor),'Business settings saved.')
+        'monthly_budget':budget,'backup_enabled':str(backups).lower(),'backup_days':str(days),'default_industry':'general','language':language},actor=actor),'Business settings saved.')
 st.caption('Backups run while an owner has the app open, or through the supplied maintenance worker. Backups are stored beside the database in a backups folder. Copy important backups to another device.')
 if st.button('Run backup and exception check now'):
     act('maintenance',lambda:store.run_maintenance(actor=actor),lambda result:result)
@@ -32,4 +32,4 @@ with st.form(f'user_{uid}'):
     active=st.checkbox('Active user',value=bool(u.get('active',1)))
     submit=st.form_submit_button('Save user')
 if submit:act('user',lambda:store.save_user(username,display,role,password,active,actor=actor,user_id=uid),'User saved. Existing sessions for this user have been signed out.')
-st.caption('Owner: all actions. Manager: catalogue, stock, purchasing and accounts. Purchaser: drafts and quotations. Warehouse: stock and production. Accountant: bills and sales. Viewer: read-only. All users belong to this one business.')
+st.caption('Owner: all actions. Manager: catalogue, stock, purchasing and accounts. Purchaser: drafts and quotations. Warehouse: stock, dispatch and operations. Accountant: bills and sales. Viewer: read-only. All users belong to this one business.')

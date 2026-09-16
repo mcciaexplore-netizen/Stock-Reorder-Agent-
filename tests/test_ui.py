@@ -37,7 +37,7 @@ class WorkspaceTests(unittest.TestCase):
     def test_empty_workspace_and_all_pages_load(self):
         app = self.app()
         for page in ['Overview','Products','Suppliers','Stock movements','Purchase orders','Import and backup',
-                     'Locations and reservations','Tracking and units','Manufacturing and jobs','Quotations and bills',
+                     'Locations and reservations','Tracking and units','Assembly and jobs','Quotations and bills',
                      'Sales and invoices','Documents','Returnables and repairs','Reports','Exceptions','Offline entry','Settings']:
             app.radio(key='page').set_value(page).run()
             self.assertFalse(app.exception, f'{page}: {[e.value for e in app.exception]}')
@@ -82,7 +82,7 @@ class WorkspaceTests(unittest.TestCase):
         self.seed()
         app = self.app()
         for page in ['Products','Suppliers','Stock movements','Purchase orders','Import and backup',
-                     'Locations and reservations','Tracking and units','Manufacturing and jobs','Quotations and bills',
+                     'Locations and reservations','Tracking and units','Assembly and jobs','Quotations and bills',
                      'Sales and invoices','Documents','Returnables and repairs','Reports','Exceptions','Offline entry','Settings']:
             app.radio(key='page').set_value(page).run()
             self.assertFalse(app.exception, f'{page}: {[e.value for e in app.exception]}')
@@ -122,11 +122,11 @@ class WorkspaceTests(unittest.TestCase):
         output=self.store.save_product(dict(item_code='OUTPUT',item_name='Finished frame',unit='Pcs',unit_price='0',selling_price='100',reorder_level='0',reorder_qty='0'),actor='Owner',token='output')
         self.store.save_recipe(output,[{'product_id':raw['id'],'qty':'1'}],actor='Owner')
         app=self.app()
-        app.radio(key='page').set_value('Manufacturing and jobs').run()
+        app.radio(key='page').set_value('Assembly and jobs').run()
         next(s for s in app.selectbox if s.label=='Finished product / kit').select(output).run()
         next(t for t in app.text_input if t.label=='Finished quantity').input('1')
-        next(t for t in app.text_input if t.label=='Production job / batch reference').input('WO-UI')
-        next(b for b in app.button if b.label=='Record production').click().run()
+        next(t for t in app.text_input if t.label=='Assembly job / batch reference').input('WO-UI')
+        next(b for b in app.button if b.label=='Record assembly').click().run()
         self.assertFalse(app.exception)
         self.assertEqual(next(p['stock'] for p in self.store.products() if p['id']==output),1000)
         self.assertEqual(next(p['stock'] for p in self.store.products() if p['id']==raw['id']),raw['stock']-1000)

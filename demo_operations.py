@@ -1,4 +1,4 @@
-"""Optional, repeatable samples for the six factory-operation screens."""
+"""Optional, repeatable samples for the advanced operations screens."""
 from datetime import date, timedelta
 import json
 from inventory import ValidationError
@@ -12,8 +12,8 @@ def seed_operations_demo(store):
         row=db.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone()
         state=json.loads(row['value']) if row else dict(date=date.today().isoformat(),complete=False)
         if state['complete']:return False
-        if not db.execute("SELECT 1 FROM settings WHERE key='_demo_manufacturing_v1'").fetchone():
-            raise ValidationError('Load the manufacturing sample pack first.')
+        if not db.execute("SELECT 1 FROM settings WHERE key IN ('_demo_general_business_v1','_demo_manufacturing_v1')").fetchone():
+            raise ValidationError('Load the general sample pack first.')
         db.execute('INSERT OR IGNORE INTO settings VALUES(?,?)',(key,json.dumps(state)))
     actor='Demo setup'; anchor=date.fromisoformat(state['date'])
     day=lambda n:(anchor+timedelta(days=n)).isoformat(); token=lambda name:'demo-operations-v1:'+name
@@ -27,7 +27,7 @@ def seed_operations_demo(store):
     store.invoice_sales_dispatch(delivery,day(0),day(30),actor=actor,token=token('invoice'))
     store.create_customer_quote(customer,[dict(product_id=p['DEMO-BRACKET'],qty='100',price='175',tax_rate='0')],day(20),day(14),'Sample quotation awaiting customer confirmation.',actor=actor,token=token('openquote'))
     wid=store.create_work_order(p['DEMO-RACK'],'3',1,'Demo operator · Assembly',day(7),['Cutting','Welding','Coating','Final inspection'],
-        'Sample partial production with recoverable offcuts.',planned_overhead='600',order_line_id=line,actor=actor,token=token('work'))
+        'Sample partial work order with recoverable offcuts.',planned_overhead='600',order_line_id=line,actor=actor,token=token('work'))
     if store.work_order_detail(wid)['state']=='planned':store.advance_work_order(wid,0,'Demo operator · Assembly',day(7),'Released to workshop',actor=actor)
     store.issue_work_materials(wid,{p['DEMO-SHEET']:'19',p['DEMO-BOLT']:'60',p['DEMO-WIRE']:'0.45'},actor=actor,token=token('materials'))
     store.record_work_cost(wid,'labour','3','120','Welding and assembly',actor=actor,token=token('labour'))

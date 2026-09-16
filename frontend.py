@@ -11,11 +11,11 @@ ROOT = Path(__file__).resolve().parent
 LOGO = ROOT / 'static' / 'branding' / 'logo-mccia-white-blue-new.png'
 PAGE_ICONS = {
     'Customer orders': 'assignment', 'Work orders': 'factory', 'Material planning': 'account_tree',
-    'Quality inspections': 'verified', 'Job-work tracking': 'local_shipping', 'Production costs': 'calculate',
+    'Quality checks': 'verified', 'Outside work tracking': 'local_shipping', 'Cost analysis': 'calculate',
     'Overview': 'space_dashboard', 'Products': 'inventory_2', 'Suppliers': 'handshake',
     'Stock movements': 'swap_horiz', 'Purchase orders': 'shopping_cart', 'Import and backup': 'cloud_upload',
     'Locations and reservations': 'warehouse', 'Tracking and units': 'qr_code_2',
-    'Manufacturing and jobs': 'precision_manufacturing', 'Quotations and bills': 'request_quote',
+    'Assembly and jobs': 'precision_manufacturing', 'Quotations and bills': 'request_quote',
     'Sales and invoices': 'receipt_long', 'Documents': 'folder_open', 'Returnables and repairs': 'build',
     'Reports': 'bar_chart', 'Exceptions': 'notifications', 'Offline entry': 'offline_bolt', 'Settings': 'settings',
 }
@@ -34,14 +34,14 @@ def access_form(*, setup=False, demos=()):
             logo = base64.b64encode(LOGO.read_bytes()).decode('ascii')
             st.html(f'''<section class="brand-hero" aria-label="About Stocklist">
                 <div class="brand-lockup"><img class="brand-logo" src="data:image/png;base64,{logo}" alt="MCCIA logo" /><span class="product-name">STOCKLIST</span></div>
-                <p class="eyebrow">Inventory &amp; operations for MSMEs</p>
+                <p class="eyebrow">Inventory &amp; operations for every growing business</p>
                 <h2>Know your stock.<br /><span>Keep work moving.</span></h2>
-                <p class="hero-copy">From raw materials to finished goods. One workspace for your factory, store and accounts.</p>
-                <div class="flow-diagram" aria-label="Stocklist supports materials, production and dispatch">
-                    <div class="flow-step"><span class="flow-number">01</span><div><strong>Materials in place</strong><small>Stock, suppliers and purchasing</small></div></div>
-                    <div class="flow-step"><span class="flow-number">02</span><div><strong>Production in view</strong><small>Recipes, job work and material costs</small></div></div>
-                    <div class="flow-step"><span class="flow-number">03</span><div><strong>Ready for dispatch</strong><small>Invoices, returns and collections</small></div></div>
-                </div><p class="hero-foot">MANUFACTURING &nbsp; / &nbsp; JOB WORK &nbsp; / &nbsp; TRADING</p>
+                <p class="hero-copy">One workspace for stock, purchasing, orders, billing and day-to-day operations.</p>
+                <div class="flow-diagram" aria-label="Stocklist supports stock, orders and accounts">
+                    <div class="flow-step"><span class="flow-number">01</span><div><strong>Stock in view</strong><small>Products, locations and availability</small></div></div>
+                    <div class="flow-step"><span class="flow-number">02</span><div><strong>Orders moving</strong><small>Purchasing, customers and commitments</small></div></div>
+                    <div class="flow-step"><span class="flow-number">03</span><div><strong>Accounts connected</strong><small>Invoices, returns and payments</small></div></div>
+                </div><p class="hero-foot">TRADING &nbsp; / &nbsp; SERVICES &nbsp; / &nbsp; ASSEMBLY &nbsp; / &nbsp; MANUFACTURING</p>
                 </section>''')
         with right:
             with st.container(key='signin_panel'):
@@ -100,4 +100,4 @@ def attention_summary(alerts):
 
 
 def workspace_footer():
-    st.html('<footer class="stock-footer"><span>Stocklist · Inventory &amp; operations</span><span>Manufacturing / Job work / Trading</span></footer>')
+    st.html('<footer class="stock-footer"><span>Stocklist · Inventory &amp; operations</span><span>Trading / Services / Assembly / Manufacturing</span></footer>')
