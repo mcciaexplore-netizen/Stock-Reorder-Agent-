@@ -1,0 +1,40 @@
+[theme]
+base = "light"
+primaryColor = "#146CAA"
+backgroundColor = "#F5F8FC"
+secondaryBackgroundColor = "#EDF3F8"
+textColor = "#203B50"
+# Font families verified against MCCIA's official stylesheet; see docs/BRANDING.md.
+font = "Candara, 'Segoe UI', sans-serif"
+headingFont = "'Segoe', 'Segoe UI', sans-serif"
+baseFontSize = 17
+baseFontWeight = 400
+headingFontSizes = ["34px", "25px", "21px", "19px", "17px", "15px"]
+headingFontWeights = [600, 600, 600, 600, 600, 600]
+baseRadius = "10px"
+buttonRadius = "8px"
+borderColor = "#D9E3ED"
+showWidgetBorder = true
+showSidebarBorder = true
+dataframeBorderColor = "#D9E3ED"
+dataframeHeaderBackgroundColor = "#EAF1F7"
+greenColor = "#14804A"
+greenTextColor = "#17643F"
+greenBackgroundColor = "#E8F5ED"
+linkColor = "#146CAA"
+chartCategoricalColors = ["#146CAA", "#159452", "#D39B39", "#7189A0", "#AE5A64"]
+
+[theme.sidebar]
+font = "'Segoe UI', Candara, sans-serif"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EFF5FA"
+textColor = "#304B60"
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+address = "127.0.0.1"
+
+[browser]
+gatherUsageStats = false

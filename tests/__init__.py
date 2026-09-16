@@ -1,0 +1,1 @@
+"""Stocklist regression tests."""

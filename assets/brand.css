@@ -1,0 +1,213 @@
+/* Stocklist · MCCIA. Native controls keep their keyboard and screen-reader behavior.
+   Layout hooks use our container keys; native widget hooks target Streamlit 1.59. */
+:root {
+  --sl-blue: #146caa;
+  --sl-ink: #203b50;
+  --sl-muted: #566d81;
+  --sl-line: #d9e3ed;
+  --sl-green: #14804a;
+  --sl-body-font: Candara, 'Segoe UI', sans-serif;
+  --sl-ui-font: 'Segoe', 'Segoe UI', Candara, sans-serif;
+}
+[data-testid="stMainBlockContainer"] {
+  max-width: 1560px;
+  padding: 4rem 2.8rem 3rem;
+}
+[data-testid="stHeader"] { background: #f5f8fcf5; }
+[data-testid="stAppDeployButton"] { display: none; }
+h1, h2, h3 { letter-spacing: -.02em; text-wrap: balance; }
+h1 { padding-bottom: .3rem; }
+p { line-height: 1.55; }
+[data-testid="stAppViewContainer"] [data-testid="stCaptionContainer"],
+[data-testid="stAppViewContainer"] [data-testid="stCaptionContainer"] p {
+  color: #486174;
+  opacity: 1;
+  font-size: 15px;
+  line-height: 1.6;
+}
+[data-testid="stAppViewContainer"] [data-testid="stWidgetLabel"] p {
+  color: var(--sl-ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stNumberInput"] input { font-size: 17px; }
+[data-testid="stTextInput"] input::placeholder { color: #60758a; opacity: 1; }
+[data-testid="stButton"] button,
+[data-testid="stFormSubmitButton"] button,
+[data-testid="stDownloadButton"] button {
+  min-height: 2.65rem;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  font-weight: 600;
+}
+[data-testid="stButton"] button p,
+[data-testid="stFormSubmitButton"] button p,
+[data-testid="stDownloadButton"] button p,
+[data-testid="stTabs"] [role="tab"] p {
+  font-family: var(--sl-ui-font);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+button:focus-visible, a:focus-visible {
+  outline: 3px solid #146caa;
+  outline-offset: 3px;
+}
+[data-testid="stButton"] button:hover,
+[data-testid="stDownloadButton"] button:hover { box-shadow: 0 2px 7px #18395110; }
+[data-testid="stForm"] {
+  background: #fff;
+  padding: 1.35rem;
+  border-color: var(--sl-line);
+}
+[data-testid="stDataFrame"] { border-radius: 10px; background: #fff; }
+[data-testid="stExpander"] { background: #fff; border-radius: 10px; }
+[data-testid="stTabs"] [role="tablist"] { gap: 1.8rem; }
+[data-testid="stMetricValue"] {
+  font-family: var(--sl-ui-font);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+[data-testid="stMetricLabel"] p { font-family: var(--sl-body-font); }
+
+/* Sign-in: branding and an explanation alongside genuine native input controls. */
+.st-key-auth_shell { max-width: 1240px; margin: 1.5rem auto; }
+.st-key-signin_panel {
+  background: #fff;
+  border: 1px solid var(--sl-line);
+  border-radius: 18px;
+  padding: 2rem;
+  box-shadow: 0 12px 35px #243f5910;
+}
+.st-key-signin_panel h1 { font-size: 1.8rem; }
+.st-key-signin_panel [data-testid="stForm"] { padding: 0; background: transparent; }
+.st-key-signin_panel [data-testid="stForm"] input { min-height: 2.75rem; }
+.st-key-demo_access { margin-top: .5rem; padding-top: 1rem; border-top: 1px solid var(--sl-line); }
+.st-key-demo_access h3 { font-size: 1.05rem; letter-spacing: 0; }
+.st-key-demo_access [data-testid="stCaptionContainer"] { font-size: .85rem; }
+.brand-hero {
+  position: relative;
+  min-height: 700px;
+  overflow: hidden;
+  padding: 2.5rem;
+  border-radius: 18px;
+  background: #eaf2f9;
+  border: 1px solid #d6e5f0;
+}
+.brand-lockup { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+.brand-logo { width: 190px; height: auto; }
+.brand-lockup .product-name {
+  border-left: 1px solid #b6ccd9;
+  padding-left: 1.1rem;
+  color: #294b62;
+  font: 600 .82rem 'Segoe UI', sans-serif;
+  letter-spacing: .08em;
+}
+.brand-hero .eyebrow { margin-top: 3.8rem; color: #146caa; }
+.eyebrow { font: 600 .72rem 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.brand-hero h2 { font: 650 clamp(2rem, 3.35vw, 3.1rem)/1.14 'Segoe UI', sans-serif; color: #183e59; margin: 1rem 0; }
+.brand-hero h2 span { color: #146caa; }
+.brand-hero .hero-copy { max-width: 32ch; font-size: 1.13rem; color: #4e6a80; margin-bottom: 2rem; }
+.flow-diagram {
+  background-image: linear-gradient(#d4e2ee70 1px, transparent 1px), linear-gradient(90deg, #d4e2ee70 1px, transparent 1px);
+  background-size: 22px 22px;
+  padding: 1.35rem .8rem;
+  margin: 1.5rem -.3rem;
+}
+.flow-step { display: flex; align-items: center; gap: 1rem; padding: .8rem 1rem; background: #ffffffed; border: 1px solid #ccdeea; border-radius: 9px; }
+.flow-step:nth-of-type(2) { margin: .7rem 0 .7rem 1.5rem; }
+.flow-step:nth-of-type(3) { margin-left: 3rem; }
+.flow-number { flex: 0 0 32px; font: 500 .8rem 'Segoe UI', sans-serif; color: #146caa; }
+.flow-step strong { display: block; color: #264e68; font: 600 .95rem 'Segoe UI', sans-serif; }
+.flow-step small { color: #486174; font-size: 15px; line-height: 1.5; }
+.flow-step:last-child .flow-number { color: #14804a; }
+.brand-hero .hero-foot { color: #4e677c; font-size: 13px; margin-top: 2rem; }
+.auth-foot { color: #486174; font-size: 14px; text-align: center; padding: .6rem 0; }
+
+/* Navigation remains one native radio group so arrow-key navigation still works. */
+[data-testid="stSidebar"] { min-width: 260px; max-width: 292px; }
+[data-testid="stSidebarUserContent"] { padding: 1.1rem 1rem 1.5rem; }
+.sidebar-brand { padding: 0 .4rem .7rem; }
+.sidebar-brand strong { font: 650 1.55rem 'Segoe UI', sans-serif; letter-spacing: -.05em; color: #203b50; }
+.sidebar-brand p { color: #486174; font-size: 14px; line-height: 1.5; margin: .3rem 0 0; }
+.workspace-tag { display: inline-flex; gap: .45rem; align-items: center; padding: .22rem .55rem; border-radius: 5px; background: #e9f5ee; color: #236346; font-size: .78rem; font-weight: 600; }
+.workspace-tag::before { content: ''; width: 6px; height: 6px; background: #159452; border-radius: 50%; }
+.nav-heading { font: 600 11px 'Segoe UI', sans-serif; letter-spacing: .1em; color: #526b7e; margin: .65rem .55rem .3rem; }
+.st-key-workspace_navigation [data-testid="stRadioGroup"] { gap: 3px; }
+.st-key-workspace_navigation [data-testid="stRadioOption"] {
+  border-radius: 7px;
+  padding: .4rem .65rem;
+  margin: 0;
+  min-height: 36px;
+  width: 100%;
+  border-left: 3px solid transparent;
+  transition: background-color 140ms ease;
+}
+.st-key-workspace_navigation [data-testid="stRadioOption"]:hover { background: #f2f6fa; }
+.st-key-workspace_navigation [data-testid="stRadioOption"][data-selected="true"] { background: #e8f2fb; border-left-color: #146caa; color: #125e95; }
+.st-key-workspace_navigation [data-testid="stRadioOption"][data-selected="true"] p { font-weight: 700; }
+.st-key-workspace_navigation [data-testid="stRadioOption"][data-focus-visible="true"] { outline: 2px solid #146caa; outline-offset: 2px; }
+.st-key-workspace_navigation [data-testid="stRadioOption"] > div > div > div:first-child:not([data-testid]) { display: none; }
+.st-key-workspace_navigation [data-testid="stRadioOption"] p { font-family: 'Segoe UI', sans-serif; font-size: 15px; font-weight: 500; line-height: 1.4; }
+.st-key-workspace_navigation [data-testid="stRadioOption"] [data-testid="stIconMaterial"] { font-size: 1.12rem; vertical-align: -.15rem; margin-right: .45rem; }
+.st-key-sidebar_account { border-top: 1px solid #e4ebf1; padding-top: 1rem; margin-top: .5rem; }
+.st-key-sidebar_account [data-testid="stSelectbox"] { max-width: 100%; }
+
+/* Shared workspace header and data hierarchy. */
+.workspace-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .25rem 0 .65rem; border-bottom: 1px solid #dde6ef; margin-bottom: .5rem; }
+.workspace-bar .crumb { color: #486174; font-size: 15px; line-height: 1.45; }
+.workspace-bar strong { color: #304e63; font-weight: 600; }
+.workspace-bar .meta { display: flex; align-items: center; gap: 1rem; color: #486174; font-size: 14px; white-space: nowrap; }
+.st-key-overview_metrics { margin: .6rem 0 1.2rem; }
+.st-key-overview_metrics [data-testid="stMetric"] { background: #fff; padding: 1.2rem 1.2rem 1rem; border: 1px solid #dbe5ee; border-radius: 12px; min-height: 126px; }
+.st-key-overview_metrics [data-testid="stMetricValue"] { font-size: clamp(1.7rem, 2.5vw, 2.5rem); font-weight: 600; color: #244b65; }
+.st-key-overview_metrics [data-testid="stMetricLabel"] { color: #566d81; }
+.st-key-overview_metrics [data-testid="stColumn"]:nth-child(2) [data-testid="stMetric"] { background: #fffaf0; border-color: #ecdfbd; }
+.st-key-overview_metrics [data-testid="stColumn"]:nth-child(2) [data-testid="stMetricValue"] { color: #88601c; }
+.st-key-overview_metrics [data-testid="stColumn"]:last-child [data-testid="stMetric"] { background: #edf7f1; border-color: #cfe6d8; }
+.st-key-overview_metrics [data-testid="stColumn"]:last-child [data-testid="stMetricValue"] { color: #286444; }
+.st-key-overview_actions { margin-bottom: 1rem; }
+.st-key-attention_panel { background: #fff; border: 1px solid #dbe5ee; border-radius: 12px; padding: 1.35rem; }
+.attention-row { display: flex; gap: 1rem; align-items: center; padding: .9rem 0; border-bottom: 1px solid #edf1f5; }
+.attention-row:last-child { border-bottom: 0; }
+.attention-number { display: grid; place-items: center; width: 37px; height: 37px; flex: 0 0 37px; color: #8a6325; background: #fcf2df; border-radius: 8px; font: 600 1rem 'Segoe UI', sans-serif; }
+.attention-label { color: #405f75; font-size: .95rem; }
+.attention-empty { padding: 1rem 0; color: #296b47; }
+.stock-footer { margin-top: 1.6rem; padding-top: .75rem; border-top: 1px solid #e0e8ef; color: #486174; font-size: 14px; display: flex; justify-content: space-between; gap: 1rem; }
+@media (max-width: 1100px) {
+  [data-testid="stMainBlockContainer"] { padding: 4rem 1.7rem 2rem; }
+  .brand-hero { padding: 1.8rem; }
+  .st-key-signin_panel { padding: 1.5rem; }
+  .st-key-overview_metrics [data-testid="stHorizontalBlock"] { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: .75rem; }
+  .st-key-overview_metrics [data-testid="stColumn"] { width: 100%; min-width: 0; }
+  .st-key-overview_metrics [data-testid="stColumn"]:last-child [data-testid="stMetricValue"] { font-size: 1.5rem; }
+  .st-key-overview_body > [data-testid="stHorizontalBlock"] { flex-direction: column; }
+  .st-key-overview_body > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] { width: 100%; flex: 1 1 100%; }
+}
+@media (max-width: 760px) {
+  [data-testid="stMainBlockContainer"] { padding: 4rem 1rem 2rem; }
+  .st-key-auth_shell { margin: 1rem auto; }
+  .brand-hero { min-height: 0; padding: 1.5rem; }
+  .brand-logo { width: 150px; }
+  .brand-hero .eyebrow { margin-top: 1.5rem; }
+  .brand-hero h2 { font-size: 2rem; }
+  .brand-hero .hero-copy { font-size: 1rem; margin-bottom: 0; max-width: 100%; }
+  .brand-hero .flow-diagram, .brand-hero .hero-foot { display: none; }
+  .st-key-signin_panel { padding: 1.4rem; border-radius: 14px; }
+  .workspace-bar { flex-wrap: wrap; gap: .6rem; padding-bottom: 1rem; margin-bottom: 1rem; }
+  .workspace-bar .meta { gap: .7rem; }
+  h1 { font-size: 1.8rem; }
+  .st-key-overview_metrics [data-testid="stHorizontalBlock"] { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: .75rem; }
+  .st-key-overview_metrics [data-testid="stColumn"] { width: 100%; min-width: 0; }
+  .st-key-overview_metrics [data-testid="stMetric"] { padding: .85rem; min-height: 110px; }
+  .st-key-overview_metrics [data-testid="stMetricValue"] { font-size: 1.6rem; }
+  .st-key-overview_metrics [data-testid="stColumn"]:last-child [data-testid="stMetricValue"] { font-size: 1.25rem; }
+  .st-key-overview_metrics [data-testid="stMetricLabel"] p { font-size: .8rem; }
+  .stock-footer { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
+}
