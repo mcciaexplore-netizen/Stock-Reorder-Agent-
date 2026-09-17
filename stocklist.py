@@ -148,8 +148,8 @@ class Stocklist(Security, InventoryOps, Purchasing, Sales, Workspace, CustomerOr
             self.identity()
         db = cloud_database.connect(self.path, timeout=15)
         db.row_factory = sqlite3.Row
-        db.execute('PRAGMA foreign_keys=ON')
         try:
+            db.execute('PRAGMA foreign_keys=ON')
             if write:
                 db.execute('BEGIN IMMEDIATE')
             yield db

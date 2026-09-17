@@ -73,7 +73,7 @@ class Connection:
             return fn(*args)
         except self.driver.IntegrityError:
             raise sqlite3.IntegrityError('A database constraint rejected this change.') from None
-        except self.driver.Error:
+        except (self.driver.Error, OSError):
             # Connection strings contain API keys. Never forward SDK messages.
             raise sqlite3.OperationalError('Cloud database request failed. Check database availability and credentials.') from None
 
@@ -144,7 +144,7 @@ def connect(path, timeout=15):
         query['timeout'] = str(timeout)
         query['connect_timeout'] = str(timeout)
         raw = sqlitecloud.connect(urlunsplit(parts._replace(query=urlencode(query))))
-    except (sqlitecloud.Error, ValueError):
+    except (sqlitecloud.Error, ValueError, OSError):
         raise sqlite3.OperationalError('Cannot connect to the cloud database. Check SQLITE_CLOUD_URL in deployment settings.') from None
     connection = Connection(raw, sqlitecloud)
     try:

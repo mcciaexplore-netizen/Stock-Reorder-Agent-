@@ -25,6 +25,14 @@ from frontend import (apply_brand, access_form, sidebar_brand, workspace_bar,
 
 st.set_page_config(page_title='Stocklist | MCCIA', page_icon=':material/inventory_2:', layout='wide')
 apply_brand()
+if 'auth_notice' in st.session_state:
+    st.warning(st.session_state.pop('auth_notice'))
+
+def connection_error():
+    st.error('The database is temporarily unavailable. Please try again. Your saved records are kept in the database.')
+    st.button('Try again', key='retry_database')
+    st.stop()
+
 if os.getenv('VERCEL') and not config.SQLITE_CLOUD_URL:
     st.error('Deployment setup needed: add SQLITE_CLOUD_URL in Vercel environment settings. Local database storage is disabled on Vercel.')
     st.stop()
@@ -33,13 +41,14 @@ if config.SQLITE_CLOUD_URL and not config.SQLITE_CLOUD_URL.startswith('sqliteclo
     st.stop()
 try:
     store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token'))
+    needs_setup = store.needs_setup()
 except (ValidationError, sqlite3.Error) as exc:
     st.error(str(exc))
     st.stop()
 demo_accounts = [] if store.cloud else demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
 auth_content = st.empty()
 
-if store.needs_setup():
+if needs_setup:
     with auth_content.container():
         access = access_form(setup=True)
     if access['submitted']:
@@ -52,6 +61,8 @@ if store.needs_setup():
             st.rerun()
         except ValidationError as exc:
             access['feedback'].error(str(exc))
+        except (sqlite3.Error, OSError):
+            access['feedback'].error('Could not reach the database. Please try again.')
     st.stop()
 try:
     identity = store.identity()
@@ -69,9 +80,16 @@ except ValidationError:
             st.rerun()
         except ValidationError as exc:
             access['feedback'].error(str(exc))
+        except (sqlite3.Error, OSError):
+            access['feedback'].error('Could not reach the database. Please try again.')
     st.stop()
+except (sqlite3.Error, OSError):
+    connection_error()
 actor = identity['name']
-business = store.settings()
+try:
+    business = store.settings()
+except (sqlite3.Error, OSError):
+    connection_error()
 sidebar_content = st.sidebar.empty()
 
 @st.fragment(run_every='60s')
@@ -150,8 +168,13 @@ related_tasks = {
 
 def sign_out():
     # Callbacks run before rendering so the previous role's widgets cannot survive a logout rerun.
-    store.logout()
-    st.session_state.clear()
+    try:
+        store.logout()
+    except (sqlite3.Error, OSError):
+        st.session_state.clear()
+        st.session_state['auth_notice'] = 'Signed out on this device. The database was unavailable, so the server session could not be revoked and will expire automatically.'
+    else:
+        st.session_state.clear()
 
 def navigate_to(target):
     st.session_state['page'] = parent_pages.get(target, target)

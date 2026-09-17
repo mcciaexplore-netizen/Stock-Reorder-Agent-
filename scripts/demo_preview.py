@@ -24,7 +24,7 @@ def main():
         folder = Path(tempfile.mkdtemp(prefix='stocklist-business-demo-'))
         database, access_path = folder / 'demo.sqlite3', folder / 'demo-access.json'
     os.environ.update(DATABASE_PATH=str(database), STOCKLIST_DEMO_ACCESS=str(access_path),
-                      GMAIL_USER='', GMAIL_APP_PASSWORD='', DRY_RUN='true')
+                      SQLITE_CLOUD_URL='', GMAIL_USER='', GMAIL_APP_PASSWORD='', DRY_RUN='true')
 
     from demo_access import demo_profiles, write_demo_access
     from demo_data import seed_sample_data
