@@ -4,6 +4,8 @@ General inventory, purchasing, sales and operations software for one MSME busine
 
 ## Start
 
+For Vercel hosting with persistent records, see [Vercel deployment](docs/VERCEL.md).
+
 Requires Python 3.11+. Direct dependencies are pinned; pip resolves transitive dependencies.
 
 ```powershell

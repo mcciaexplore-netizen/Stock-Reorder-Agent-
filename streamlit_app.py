@@ -6,6 +6,7 @@ import io
 import sqlite3
 import json
 import runpy
+import os
 from pathlib import Path
 from datetime import date
 from uuid import uuid4
@@ -24,8 +25,18 @@ from frontend import (apply_brand, access_form, sidebar_brand, workspace_bar,
 
 st.set_page_config(page_title='Stocklist | MCCIA', page_icon=':material/inventory_2:', layout='wide')
 apply_brand()
-store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token'))
-demo_accounts = demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
+if os.getenv('VERCEL') and not config.SQLITE_CLOUD_URL:
+    st.error('Deployment setup needed: add SQLITE_CLOUD_URL in Vercel environment settings. Local database storage is disabled on Vercel.')
+    st.stop()
+if config.SQLITE_CLOUD_URL and not config.SQLITE_CLOUD_URL.startswith('sqlitecloud://'):
+    st.error('SQLITE_CLOUD_URL must be a SQLite Cloud connection URL.')
+    st.stop()
+try:
+    store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token'))
+except (ValidationError, sqlite3.Error) as exc:
+    st.error(str(exc))
+    st.stop()
+demo_accounts = [] if store.cloud else demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
 auth_content = st.empty()
 
 if store.needs_setup():

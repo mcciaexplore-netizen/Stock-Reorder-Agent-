@@ -9,7 +9,9 @@ import hashlib
 import json
 import sqlite3
 import tempfile
-from contextlib import contextmanager
+import os
+import cloud_database
+from contextlib import contextmanager, closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -96,9 +98,26 @@ def actor_name(actor):
 @protect
 class Stocklist(Security, InventoryOps, Purchasing, Sales, Workspace, CustomerOrders, Production, Quality, Jobwork):
     def __init__(self, path, session_token=None):
-        self.path = Path(path)
+        self.cloud = cloud_database.is_cloud(path)
+        self.path = str(path) if self.cloud else Path(path)
         self.session_token = session_token
         self._initializing = True
+        if self.cloud:
+            cloud_database.initialize(self.path, self._empty_schema, VERSION)
+            self._initializing = False
+            if self.needs_setup():
+                username = os.getenv('STOCKLIST_OWNER_USERNAME', '')
+                password = os.getenv('STOCKLIST_OWNER_PASSWORD', '')
+                if not username or not password:
+                    raise ValidationError('Set STOCKLIST_OWNER_USERNAME and STOCKLIST_OWNER_PASSWORD in hosting settings to initialize the owner account.')
+                try:
+                    self.bootstrap(username, 'Business owner', password)
+                except ValidationError:
+                    if self.needs_setup():
+                        raise
+                finally:
+                    self.session_token = session_token
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect(True) as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
@@ -116,11 +135,18 @@ class Stocklist(Security, InventoryOps, Purchasing, Sales, Workspace, CustomerOr
         migrate(self.path)
         self._initializing = False
 
+    @staticmethod
+    def _empty_schema():
+        with tempfile.TemporaryDirectory(prefix='stocklist-schema-') as folder:
+            local = Stocklist(Path(folder) / 'template.sqlite3')
+            with closing(sqlite3.connect(local.path)) as db:
+                return '\n'.join(db.iterdump())
+
     @contextmanager
     def connect(self, write=False):
         if not self._initializing:
             self.identity()
-        db = sqlite3.connect(self.path, timeout=15)
+        db = cloud_database.connect(self.path, timeout=15)
         db.row_factory = sqlite3.Row
         db.execute('PRAGMA foreign_keys=ON')
         try:

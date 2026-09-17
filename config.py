@@ -21,7 +21,8 @@ GMAIL_APP_PASSWORD: str = os.getenv("GMAIL_APP_PASSWORD", "")
 BASE_DIR = Path(__file__).resolve().parent
 INVENTORY_PATH = Path(os.getenv("INVENTORY_PATH", str(BASE_DIR / "inventory.xlsx")))
 LOG_PATH = Path(os.getenv("LOG_PATH", str(BASE_DIR / "purchase_orders_log.csv")))
-DATABASE_PATH = Path(os.getenv("DATABASE_PATH", str(BASE_DIR / "data" / "stocklist.sqlite3")))
+SQLITE_CLOUD_URL = os.getenv('SQLITE_CLOUD_URL', '').strip()
+DATABASE_PATH = SQLITE_CLOUD_URL or Path(os.getenv("DATABASE_PATH", str(BASE_DIR / "data" / "stocklist.sqlite3")))
 
 # ── Behaviour ────────────────────────────────────────────────
 BUSINESS_NAME:    str  = os.getenv("BUSINESS_NAME",    "Your Company")
