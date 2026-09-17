@@ -4,6 +4,8 @@ General inventory, purchasing, sales and operations software for one MSME busine
 
 ## Start
 
+For Vercel hosting with persistent records, see [Vercel deployment](docs/VERCEL.md).
+
 Requires Python 3.11+. Direct dependencies are pinned; pip resolves transitive dependencies.
 
 ```powershell
@@ -19,26 +21,30 @@ Open `http://127.0.0.1:8501`. On macOS/Linux use `.venv/bin/python`. The server 
 
 ## Implemented modules
 
+The sidebar has seven pages: **Overview, Products, Stock, Purchases, Sales, Reports and Settings**.
+There is no separate tools menu. Related tasks stay inside their core section:
+product tracking under Products; locations under Stock; suppliers, bills and inspections
+under Purchases; customer orders under Sales; import and backup under Settings. Dashboard
+alerts open from Overview. Each related screen has a back button. Detailed stock tables
+and optional product fields expand when needed.
+
 - Products, suppliers, variant SKUs, custom fields and barcode search.
 - Warehouses, shops, subcontractor/consignment stock, transfers and reservations.
 - Stock movements/counts, alternate units, batches, expiry and serial tracking.
-- Bills of materials, kit assembly, internal work, overhead and job material use.
 - Replenishment using stock, orders, reservations, consumption, lead time, MOQ and packs.
 - Quotations, price history, approval budgets, POs and partial/full receiving.
 - Supplier-bill verification and landed-cost comparison.
 - Customer invoices, configured GST tax splits, linked credit returns and payments.
 - Customer quotations, confirmed sales orders, delivery commitments, partial delivery notes and delivery invoicing.
-- Work orders with operators, stages, partial output, material WIP, labour and machine costs.
-- Multilevel material planning with shared stock allocation, dated purchases and scheduled work-order output.
-- Incoming / work / final quality checks, quarantine, rework and rejected-stock disposal.
-- Customer-owned material custody, company material held outside, challans and partial outside-work reconciliation.
-- Scrap / recoverable offcuts, planned-versus-actual consumption and work-order cost analysis.
-- Attachments, local text recognition, returnable goods, warranties and repairs.
 - Local exceptions, valuation, supplier, margin and job-cost reports.
-- Accounting CSV, manual/automatic backups, offline entry and English/Hindi navigation.
+- Accounting CSV, manual/automatic backups and English-only navigation.
 
 See the [full feature matrix and precise boundaries](docs/IMPLEMENTATION.md).
-See the [connected order-to-work workflow](docs/FACTORY_WORKFLOWS.md) for the advanced operations modules.
+The five specialist manufacturing screens, Documents, Offline entry, and Returnables and repairs
+have been removed from navigation. Existing records are retained. Quality checks
+remain available to review and release held stock from purchase receipts. Existing
+manufacturing records and underlying services are retained for compatibility; their
+[legacy workflow reference](docs/FACTORY_WORKFLOWS.md) does not describe the current menu.
 
 For a separate sample business, run `python scripts/demo_preview.py`, then choose **Owner demo**, **Warehouse demo**, **Accountant demo**, or **Read-only demo** on the sign-in screen. It includes products for trading, assembly and service jobs, BOMs, work orders, customer jobs, multiple stock locations, batches/serials, purchase orders at different stages, supplier bills, invoices/payments/returns, and repair/returnable examples. All contacts and records are fictional; email sending is disabled.
 
@@ -46,12 +52,12 @@ Each normal demo launch creates a fresh temporary database. To keep your demo ed
 
 ## Common Business Walkthrough
 
-1. **Import and backup:** preview the sample or your Excel/CSV. Review mappings and opening stock, then import. Existing SKUs are rejected.
-2. **Products:** add materials and finished SKUs. For new batch/serial products, start with zero opening stock, configure **Tracking and units**, create batches/serials, then receive goods.
-3. **Locations and reservations:** create warehouses, shops, service sites or outside-party locations and transfer stock to where it is held. Transfers preserve ownership and cost.
-4. **Assembly and jobs:** select a finished product or kit, components and quantities per finished unit. Save the bill of materials.
-5. Record completed assembly, kit preparation or production at the correct location with any labour/subcontracting overhead. Components are consumed and finished stock is received atomically; shortages block the whole action.
-6. For services/projects, create a job and record material use. Do not record components already consumed by assembly a second time.
+1. **Settings → Import and backup:** preview the sample or your Excel/CSV. Review mappings and opening stock, then import. Existing SKUs are rejected.
+2. **Products:** add products. For new batch/serial products, start with zero opening stock, open **Product setup → Tracking and units**, create batches/serials, then receive goods.
+3. **Stock → Stock locations:** manage locations and reservations, and transfer stock to where it is held. Transfers preserve ownership and cost.
+4. **Sales → Customer quotations and orders:** prepare quotations, confirm orders and track promised delivery dates.
+5. Record partial or full deliveries, then invoice each delivery without issuing stock twice.
+6. **Stock movements:** record receipts, internal use, returns, damage and physical counts.
 7. Compare quotations, prepare/approve POs, record placement and receive goods into the correct location. Enter actual receipt freight to include it in stock cost.
 8. **Quotations and bills:** record supplier bills and resolve order/receipt/price discrepancies before acceptance.
 9. **Sales and invoices:** dispatch stock, download printable invoices, record payments and receive invoice-linked returns.
@@ -68,6 +74,9 @@ Valuation uses moving weighted-average cost per location. Receipt cost includes 
 The operator configures/checks GST rates, HSN and place of supply. Invoice documents implement domestic forward-charge goods with CGST/SGST/UTGST or IGST splits. The software does not register e-invoices, generate e-way bills or file returns. Accounting CSV is a generic handoff, not a live provider connection.
 
 ## Documents and offline work
+
+Legacy capabilities: these standalone screens are no longer exposed in the simplified menu.
+The following describes retained services and previously downloaded offline sheets.
 
 Attach PDF, PNG, JPEG or UTF-8 text (up to 10 MB) to products, POs, bills, jobs, invoices or repairs. Files are included in database backups. PDF text is extracted locally. Image text recognition uses Windows OCR or local Tesseract (`TESSERACT_PATH`). Review extracted text against the original before entering financial values.
 

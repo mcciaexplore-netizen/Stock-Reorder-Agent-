@@ -1,5 +1,8 @@
 # Customer commitments and operations workflows
 
+Legacy reference: customer orders and quality checks remain in the app, but the specialist manufacturing
+screens described below have been removed from navigation. Existing records are retained.
+
 ## Start with the six new sidebar screens
 
 | Screen | Main workflow |

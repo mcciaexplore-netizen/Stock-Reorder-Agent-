@@ -156,6 +156,8 @@ class Workspace:
 
     def run_maintenance(self,*,actor):
         self.refresh_alerts()
+        if self.cloud:
+            return 'Alerts refreshed. Manage automatic cloud backups with your database provider; download a manual backup from Import and backup.'
         settings=self.settings()
         if settings.get('backup_enabled')!='true':return 'Alerts refreshed. Automatic backup is disabled.'
         interval=int(settings.get('backup_days','1'))

@@ -1,5 +1,15 @@
 # Stocklist — general inventory and operations
 
+Current navigation has seven sections: Overview, Products, Stock, Purchases, Sales, Reports
+and Settings. There is no "Show all tools" menu. Tracking, locations, suppliers/bills/inspections,
+customer orders and import/backup open from their related sections; alerts open from Overview.
+Work orders,
+material planning, outside work tracking, cost analysis, assembly/jobs, Documents,
+Offline entry, and Returnables and repairs
+were removed from the menu. The implementation details below also document retained legacy
+services and data; those eight screens are no longer offered by the main app. Quality checks
+remain available because purchase receipts can place stock on hold pending inspection.
+
 ## Delivered feature matrix
 
 One business per database, multiple owned-stock locations, INR prices and authenticated users. The original workbook and historical CSV remain unchanged. The earlier review PDF describes the original prototype, not this expanded implementation.
@@ -37,7 +47,7 @@ One business per database, multiple owned-stock locations, INR prices and authen
 | Accounting export | Reports | Signed sales/credit rows and accepted supplier-bill CSVs for accountant/import mapping |
 | Scheduled backups/checks | Settings; maintenance.py | Consistent snapshots, app-open periodic checks and a separate recurring worker |
 | Offline and barcode entry | Offline entry | Self-contained HTML queue, keyboard barcode entry, supported-browser camera scanning and reviewed idempotent replay |
-| Language navigation | Sidebar; Settings | English/Hindi navigation and Unicode record fields |
+| Interface language | All screens | English-only navigation and forms; Unicode record fields |
 
 ## Data guarantees and migration
 
@@ -73,7 +83,7 @@ Public business actions enforce role permissions. Normal database access require
 - Accounting handoff is generic CSV, not a live accounting-provider connector or full double-entry ledger. Supplier bill tax totals do not determine input-credit eligibility.
 - OCR extracts text for review; it does not automatically map arbitrary supplier layouts into bill lines. Windows needs an OCR recognition language; other platforms need local Tesseract.
 - Offline operation replays reviewed movement queues, not the entire database. Live availability is checked at replay. Camera scanning depends on browser support.
-- Hindi support covers navigation; forms and validation remain English.
+- Navigation, forms and validation use English. Record fields support Unicode text.
 - Checks run while the app/worker runs. Alerts stay in the local inbox; no email/SMS/WhatsApp alert provider is configured. Backups are not copied off the machine automatically.
 - This is one business per database. Multi-tenant hosting, TLS deployment, external accounting and government-service integrations require separate setup.
 

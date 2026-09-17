@@ -6,6 +6,7 @@ import io
 import sqlite3
 import json
 import runpy
+import os
 from pathlib import Path
 from datetime import date
 from uuid import uuid4
@@ -18,17 +19,65 @@ from inventory import (FIELDS, ValidationError, amount, csv_bytes, inr, line_val
                        load_table, normalize_header, quantity, validate_table)
 from stocklist import Stocklist
 from demo_access import demo_profiles
+from demo_access import PROFILES
+from hosted_demo import DemoWorkspace
 from frontend import (apply_brand, access_form, sidebar_brand, workspace_bar,
                       attention_summary, workspace_footer, PAGE_ICONS)
 
 
 st.set_page_config(page_title='Stocklist | MCCIA', page_icon=':material/inventory_2:', layout='wide')
 apply_brand()
-store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token'))
-demo_accounts = demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
+if 'auth_notice' in st.session_state:
+    st.warning(st.session_state.pop('auth_notice'))
+
+def connection_error():
+    st.error('The database is temporarily unavailable. Please try again. Your saved records are kept in the database.')
+    st.button('Try again', key='retry_database')
+    st.stop()
+
+demo_workspace = st.session_state.get('demo_workspace')
+if demo_workspace is None and not st.session_state.get('auth_token'):
+    with st.expander('Explore a demo workspace', expanded=True):
+        st.caption('Try sample stock, purchases and sales. Your demo is private to this session; changes are temporary and email sending is off.')
+        for column, (role, (label, description)) in zip(st.columns(4), PROFILES.items()):
+            with column:
+                if st.button(label, key='hosted_demo_' + role, width='stretch'):
+                    try:
+                        with st.spinner('Preparing your sample business...'):
+                            demo_workspace = DemoWorkspace(role)
+                    except (ValidationError, sqlite3.Error, OSError):
+                        st.error('Could not prepare the demo. Please try again.')
+                        st.stop()
+                    st.session_state.clear()
+                    st.session_state['demo_workspace'] = demo_workspace
+                    st.session_state['auth_token'] = demo_workspace.token
+                    st.rerun()
+                st.caption(description)
+if demo_workspace is not None:
+    st.info('Demo workspace · Sample data only · Changes reset when you leave or your session ends.')
+    if st.button('Leave demo', key='leave_demo'):
+        demo_workspace.close()
+        st.session_state.clear()
+        st.rerun()
+
+if demo_workspace is None and os.getenv('VERCEL') and not config.SQLITE_CLOUD_URL:
+    st.error('Deployment setup needed: add SQLITE_CLOUD_URL in Vercel environment settings. Local database storage is disabled on Vercel.')
+    st.stop()
+if demo_workspace is None and config.SQLITE_CLOUD_URL and not config.SQLITE_CLOUD_URL.startswith('sqlitecloud://'):
+    st.error('SQLITE_CLOUD_URL must be a SQLite Cloud connection URL.')
+    st.stop()
+try:
+    store = (demo_workspace.open(st.session_state.get('auth_token')) if demo_workspace is not None
+             else Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token')))
+    needs_setup = store.needs_setup()
+except (ValidationError, sqlite3.Error) as exc:
+    st.error(str(exc))
+    st.stop()
+demo_accounts = [] if store.cloud or demo_workspace is not None else demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
+is_demo = demo_workspace is not None or bool(demo_accounts)
 auth_content = st.empty()
 
-if store.needs_setup():
+if needs_setup:
     with auth_content.container():
         access = access_form(setup=True)
     if access['submitted']:
@@ -41,6 +90,8 @@ if store.needs_setup():
             st.rerun()
         except ValidationError as exc:
             access['feedback'].error(str(exc))
+        except (sqlite3.Error, OSError):
+            access['feedback'].error('Could not reach the database. Please try again.')
     st.stop()
 try:
     identity = store.identity()
@@ -54,13 +105,22 @@ except ValidationError:
                 token = store.login(credentials['username'], credentials['password'])
             st.session_state.clear()
             st.session_state['auth_token'] = token
+            if demo_workspace is not None:
+                st.session_state['demo_workspace'] = demo_workspace
             auth_content.empty()
             st.rerun()
         except ValidationError as exc:
             access['feedback'].error(str(exc))
+        except (sqlite3.Error, OSError):
+            access['feedback'].error('Could not reach the database. Please try again.')
     st.stop()
+except (sqlite3.Error, OSError):
+    connection_error()
 actor = identity['name']
-business = store.settings()
+try:
+    business = store.settings()
+except (sqlite3.Error, OSError):
+    connection_error()
 sidebar_content = st.sidebar.empty()
 
 @st.fragment(run_every='60s')
@@ -120,44 +180,66 @@ def order_lines(order):
 
 
 extra_pages = {'Locations and reservations':'locations.py', 'Tracking and units':'tracking.py',
-               'Customer orders':'customer_orders.py', 'Work orders':'work_orders.py', 'Material planning':'material_planning.py',
-               'Quality checks':'quality.py', 'Outside work tracking':'jobwork.py', 'Cost analysis':'production_costs.py',
-               'Assembly and jobs':'manufacturing.py', 'Quotations and bills':'purchasing.py',
-               'Sales and invoices':'sales.py', 'Documents':'documents.py', 'Returnables and repairs':'returns.py',
-               'Reports':'reports.py', 'Exceptions':'exceptions.py', 'Offline entry':'offline.py', 'Settings':'settings.py'}
-pages = ['Overview', 'Products', 'Stock movements', 'Locations and reservations', 'Tracking and units',
-         'Customer orders', 'Work orders', 'Material planning', 'Quality checks', 'Outside work tracking', 'Cost analysis',
-         'Assembly and jobs', 'Quotations and bills', 'Purchase orders', 'Sales and invoices',
-         'Suppliers', 'Returnables and repairs', 'Reports', 'Exceptions', 'Documents',
-         'Offline entry', 'Import and backup', 'Settings']
-translations = {'Overview':'अवलोकन', 'Products':'उत्पाद', 'Suppliers':'आपूर्तिकर्ता', 'Stock movements':'स्टॉक लेनदेन',
-    'Customer orders':'ग्राहक आदेश', 'Work orders':'उत्पादन आदेश', 'Material planning':'सामग्री योजना',
-    'Quality checks':'गुणवत्ता जांच', 'Outside work tracking':'बाहरी काम ट्रैकिंग', 'Cost analysis':'लागत विश्लेषण',
-    'Purchase orders':'खरीद आदेश', 'Import and backup':'आयात और बैकअप', 'Assembly and jobs':'असेंबली और जॉब',
-    'Locations and reservations':'स्थान और आरक्षण', 'Tracking and units':'बैच और इकाइयाँ', 'Sales and invoices':'बिक्री और बिल',
-    'Quotations and bills':'कोटेशन और खरीद बिल', 'Documents':'दस्तावेज़', 'Returnables and repairs':'वापसी और मरम्मत',
-    'Reports':'रिपोर्ट', 'Exceptions':'ध्यान देने योग्य', 'Offline entry':'ऑफ़लाइन प्रविष्टि', 'Settings':'सेटिंग्स'}
+               'Customer orders':'customer_orders.py', 'Quotations and bills':'purchasing.py', 'Quality checks':'quality.py',
+               'Sales and invoices':'sales.py', 'Reports':'reports.py', 'Exceptions':'exceptions.py', 'Settings':'settings.py'}
+pages = ['Overview', 'Products', 'Stock movements', 'Purchase orders',
+         'Sales and invoices', 'Reports', 'Settings']
+page_labels = {'Stock movements': 'Stock', 'Purchase orders': 'Purchases', 'Sales and invoices': 'Sales'}
+parent_pages = {'Exceptions': 'Overview', 'Tracking and units': 'Products',
+                'Locations and reservations': 'Stock movements', 'Suppliers': 'Purchase orders',
+                'Quotations and bills': 'Purchase orders', 'Quality checks': 'Purchase orders',
+                'Customer orders': 'Sales and invoices', 'Import and backup': 'Settings'}
+related_tasks = {
+    'Products': ('Product setup', ['Tracking and units']),
+    'Stock movements': ('Stock locations', ['Locations and reservations']),
+    'Purchase orders': ('Suppliers, bills and inspections', ['Suppliers', 'Quotations and bills', 'Quality checks']),
+    'Sales and invoices': ('Customer quotations and orders', ['Customer orders']),
+    'Settings': ('Import and backup', ['Import and backup']),
+}
 
 def sign_out():
     # Callbacks run before rendering so the previous role's widgets cannot survive a logout rerun.
-    store.logout()
-    st.session_state.clear()
+    if demo_workspace is not None:
+        demo_workspace.close()
+        st.session_state.clear()
+        return
+    try:
+        store.logout()
+    except (sqlite3.Error, OSError):
+        st.session_state.clear()
+        st.session_state['auth_notice'] = 'Signed out on this device. The database was unavailable, so the server session could not be revoked and will expire automatically.'
+    else:
+        st.session_state.clear()
+
+def navigate_to(target):
+    st.session_state['page'] = parent_pages.get(target, target)
+    st.session_state['detail_page'] = target if target in parent_pages else None
+
+def change_section():
+    st.session_state['detail_page'] = None
+
+# Resume older sessions at the appropriate section, or at the overview for retired screens.
+saved_page = st.session_state.get('page', 'Overview')
+if saved_page in parent_pages:
+    navigate_to(saved_page)
+elif saved_page not in pages:
+    navigate_to('Overview')
 
 with sidebar_content.container():
-    sidebar_brand(business.get('business_name', config.BUSINESS_NAME), bool(demo_accounts))
-    language = st.session_state.get('nav_language', business.get('language', 'English'))
+    sidebar_brand(business.get('business_name', config.BUSINESS_NAME), is_demo)
     st.html('<div class="nav-heading">WORKSPACE</div>')
     with st.container(key='workspace_navigation'):
-        page = st.radio('Workspace', pages, key='page', label_visibility='collapsed',
-                        format_func=lambda p: f':material/{PAGE_ICONS[p]}: ' + (translations.get(p,p) if language=='Hindi' else p))
+        section = st.radio('Workspace', pages, key='page', label_visibility='collapsed', on_change=change_section,
+                           format_func=lambda p: f':material/{PAGE_ICONS[p]}: {page_labels.get(p, p)}')
     with st.container(key='sidebar_account'):
-        st.selectbox('Navigation language / भाषा', ['English','Hindi'],
-                     index=int(business.get('language')=='Hindi'), key='nav_language')
         st.caption(f'{actor} · {identity["role"]}')
         st.button('Sign out', on_click=sign_out, width='stretch', icon=':material/logout:')
 
-def navigate_to(target):
-    st.session_state['page'] = target
+detail = st.session_state.get('detail_page')
+if detail and parent_pages.get(detail) != section:
+    st.session_state['detail_page'] = None
+    detail = None
+page = detail or section
 
 if 'notice' in st.session_state:
     st.success(st.session_state.pop('notice'))
@@ -191,7 +273,17 @@ def pick_batch(pid, lid=None, label='Batch / serial', key=None, auto=False):
 
 page_content = st.empty()
 with page_content.container(key='workspace_content'):
-    workspace_bar(business.get('business_name', config.BUSINESS_NAME), page, bool(demo_accounts))
+    workspace_bar(business.get('business_name', config.BUSINESS_NAME), page, is_demo)
+    if detail:
+        st.button('Back to ' + page_labels.get(section, section).lower(), key='back_to_section',
+                  icon=':material/arrow_back:', on_click=navigate_to, args=(section,))
+    elif section in related_tasks:
+        label, targets = related_tasks[section]
+        with st.expander(label):
+            with st.container(horizontal=True):
+                for target in targets:
+                    st.button(target, key='open_' + target, icon=f':material/{PAGE_ICONS[target]}:',
+                              on_click=navigate_to, args=(target,))
     if page in extra_pages:
         runpy.run_path(str(Path(__file__).parent/'app_pages'/extra_pages[page]), init_globals={
             'st':st,'store':store,'actor':actor,'business':business,'identity':identity,'act':act,'grid':grid,'operation_key':operation_key,
@@ -201,34 +293,38 @@ with page_content.container(key='workspace_content'):
             'amount':amount,'quantity':quantity,'inr':inr,'csv_bytes':csv_bytes,'ValidationError':ValidationError})
     elif page == 'Overview':
         st.title('Inventory overview')
-        st.caption('Stock on hand, replenishment and orders awaiting delivery.')
+        st.caption('Check your stock, see what needs ordering and keep purchases moving.')
         orders = store.orders()
         recommendations = store.recommendations()
         with st.container(key='overview_metrics'):
             metrics = st.columns(4)
             metrics[0].metric('Products', len(products))
-            metrics[1].metric('Need replenishment', len(recommendations))
+            metrics[1].metric('Items to reorder', len(recommendations))
             metrics[2].metric('Open orders', sum(o['state'] not in ('received', 'cancelled') for o in orders))
             metrics[3].metric('Stock at purchase prices', inr(amount(sum(line_value(p['stock'], p['unit_price']) for p in products))))
         with st.container(key='overview_actions', horizontal=True):
             st.button('Add product', icon=':material/add:', on_click=navigate_to, args=('Products',), disabled=not store.allowed('catalogue'))
             st.button('Record stock movement', icon=':material/swap_horiz:', on_click=navigate_to, args=('Stock movements',), disabled=not store.allowed('inventory'))
             st.button('View purchase orders', icon=':material/shopping_cart:', on_click=navigate_to, args=('Purchase orders',))
+            st.button('Create invoice', icon=':material/receipt_long:', on_click=navigate_to,
+                      args=('Sales and invoices',), disabled=not store.allowed('accounts'))
         if not products:
-            st.info('Start by importing an inventory file or adding your first product. The supplied sample is available in Import and backup.')
+            st.info('Add your first product above, or bring in your existing stock list.')
+            st.button('Import a stock list', icon=':material/upload_file:', on_click=navigate_to,
+                      args=('Import and backup',))
+            st.button('View alerts', key='open_Exceptions', icon=':material/notifications:',
+                      on_click=navigate_to, args=('Exceptions',))
         else:
             with st.container(key='overview_body'):
                 main, aside = st.columns([2.4, 1], gap='large')
             with main:
-                st.subheader('Replenishment suggestions')
-                st.caption('Prioritize the materials that need ordering.')
+                st.subheader('What to order')
+                st.caption('Suggested quantities for items running low.')
                 if not recommendations:
                     st.success('Current stock and open orders cover all reorder levels.')
                 else:
                     grid([{'Product': p['item_name'], 'Order quantity': quantity(p['suggested_qty']), 'Unit': p['unit'],
-                           'Available': quantity(p['available']), 'Supplier': p['supplier_name'] or 'Assign a supplier',
-                           'SKU': p['item_code'], 'Target': quantity(p['effective_reorder_level']),
-                           'On order': quantity(p['incoming']), 'In drafts': quantity(p['planned'])} for p in recommendations])
+                           'Available': quantity(p['available']), 'Supplier': p['supplier_name'] or 'Assign a supplier'} for p in recommendations])
                     supplier_ids = sorted({p['supplier_id'] for p in recommendations if p['supplier_id']})
                     if supplier_ids:
                         chosen = st.selectbox('Prepare an order for', supplier_ids, format_func=supplier_label)
@@ -239,16 +335,21 @@ with page_content.container(key='workspace_content'):
                         st.info('Assign a supplier on the Products page for items without one.')
                 with st.expander('How these suggestions are calculated'):
                     st.caption('Suggestions use internal stock after reservations, open orders, recent usage, supplier lead time and purchase pack rules. Owned stock held outside the business stays visible in location reports.')
+                    if recommendations:
+                        grid([{'Product': p['item_name'], 'SKU': p['item_code'],
+                               'Target': quantity(p['effective_reorder_level']), 'Unit': p['unit'],
+                               'On order': quantity(p['incoming']), 'In drafts': quantity(p['planned'])}
+                              for p in recommendations])
             with aside:
                 with st.container(key='attention_panel'):
                     st.subheader('Needs attention')
-                    st.caption('Unreviewed exceptions in your workspace.')
+                    st.caption('Late payments, deliveries and other items to check.')
                     attention_summary(store.alerts())
-                    st.button('Review exceptions', icon=':material/arrow_forward:', on_click=navigate_to,
+                    st.button('View alerts', key='open_Exceptions', icon=':material/arrow_forward:', on_click=navigate_to,
                               args=('Exceptions',), width='stretch')
-            st.subheader('Current stock')
-            grid(stock_rows(products))
-        st.caption('Stock value uses current product purchase prices; it is not FIFO or weighted-average accounting valuation.')
+            with st.expander('View current stock'):
+                grid(stock_rows(products))
+        st.caption('Stock estimate uses current purchase prices. For recorded stock costs, open Reports.')
 
     elif page == 'Products':
         st.title('Products')
@@ -268,8 +369,6 @@ with page_content.container(key='workspace_content'):
             left, right = st.columns(2)
             code = left.text_input('SKU', value=current.get('item_code', ''))
             name = right.text_input('Product name', value=current.get('item_name', ''))
-            category = left.text_input('Category', value=current.get('category', ''))
-            barcode = right.text_input('Barcode', value=current.get('barcode') or '')
             unit = left.text_input('Stock unit', value=current.get('unit', 'Pcs'), disabled=selected is not None,
                                    help='Quantities use this unit. Use a new SKU for a different unit.')
             supplier_options = [None] + list(supplier_lookup)
@@ -278,10 +377,15 @@ with page_content.container(key='workspace_content'):
                                          format_func=lambda x: 'Unassigned' if x is None else supplier_label(x))
             price = left.text_input('Purchase price (₹)', value=amount(current.get('unit_price', 0)))
             selling = right.text_input('Selling price (₹)', value=amount(current.get('selling_price', 0)))
-            threshold = left.text_input('Reorder level', value=quantity(current.get('reorder_level', 0)))
-            reorder = right.text_input('Fixed reorder quantity', value=quantity(current.get('reorder_qty', 0)),
-                                       help='Zero uses a target of 1.5 times the reorder level.')
-            opening = st.text_input('Opening stock', value='0') if selected is None else '0'
+            threshold = left.text_input('Reorder level', value=quantity(current.get('reorder_level', 0)),
+                                        help='Start suggesting a purchase when stock falls to this quantity.')
+            opening = right.text_input('Opening stock', value='0') if selected is None else '0'
+            with st.expander('Optional product details'):
+                detail_left, detail_right = st.columns(2)
+                category = detail_left.text_input('Category', value=current.get('category', ''))
+                barcode = detail_right.text_input('Barcode', value=current.get('barcode') or '')
+                reorder = st.text_input('Fixed reorder quantity', value=quantity(current.get('reorder_qty', 0)),
+                                        help='Leave at zero to calculate an order quantity automatically.')
             if selected is not None:
                 st.caption('Use Stock movements to record a receipt, issue or physical count. Product editing does not change stock.')
             save = st.form_submit_button('Save product', type='primary')

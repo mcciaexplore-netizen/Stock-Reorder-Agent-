@@ -6,6 +6,7 @@ import hmac
 import inspect
 import secrets
 import sqlite3
+import cloud_database
 import time
 
 from inventory import ValidationError, text
@@ -60,7 +61,7 @@ def matches(password, stored):
 class Security:
     @contextmanager
     def _auth_db(self):
-        db = sqlite3.connect(self.path, timeout=15)
+        db = cloud_database.connect(self.path, timeout=15)
         db.row_factory = sqlite3.Row
         try:
             db.execute('BEGIN IMMEDIATE')
