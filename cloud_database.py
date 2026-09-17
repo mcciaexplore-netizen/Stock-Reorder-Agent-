@@ -175,7 +175,11 @@ def initialize(path, template_factory, version):
             if current == version:
                 db.commit()
                 return
-            if current != 0 or db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchone():
+            # SQLite Cloud pre-creates this vector-extension catalogue even in
+            # a new database. Preserve it; do not mistake it for business data.
+            # Keep the allowlist exact so other existing tables still block setup.
+            if current != 0 or db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT GLOB 'sqlite_*' AND name <> ?",
+                                          ('_sqliteai_vector',)).fetchone():
                 raise sqlite3.OperationalError('Choose an empty dedicated database or import a current Stocklist backup.')
             statement = ''
             for line in script.splitlines(keepends=True):

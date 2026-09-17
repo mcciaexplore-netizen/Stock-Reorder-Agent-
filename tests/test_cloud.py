@@ -102,6 +102,29 @@ class CloudTests(unittest.TestCase):
         with self.assertRaisesRegex(sqlite3.OperationalError, 'empty dedicated'):
             self.store()
 
+    def test_provider_metadata_is_preserved_during_initialization(self):
+        with closing(sqlite3.connect(self.path)) as db:
+            db.execute('CREATE TABLE _sqliteai_vector (tblname TEXT, colname TEXT, key TEXT, value ANY, PRIMARY KEY(tblname,colname,key))')
+            db.execute("INSERT INTO _sqliteai_vector VALUES('provider','metadata','version','1')")
+            db.commit()
+        store = self.store()
+        with store.connect() as db:
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual(db.execute('SELECT value FROM _sqliteai_vector').fetchone()[0], 1)
+            self.assertIsNotNone(db.execute("SELECT 1 FROM sqlite_master WHERE name='products'").fetchone())
+
+    def test_provider_metadata_does_not_hide_other_existing_tables(self):
+        with closing(sqlite3.connect(self.path)) as db:
+            db.execute('CREATE TABLE _sqliteai_vector (value TEXT)')
+            db.execute('CREATE TABLE existing (value TEXT)')
+            db.execute("INSERT INTO existing VALUES('keep me')")
+            db.commit()
+        with self.assertRaisesRegex(sqlite3.OperationalError, 'empty dedicated'):
+            self.store()
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute('SELECT value FROM existing').fetchone()[0], 'keep me')
+            self.assertIsNone(db.execute("SELECT 1 FROM sqlite_master WHERE name='products'").fetchone())
+
     def test_failed_commit_is_reported(self):
         driver = types.SimpleNamespace(Error=sqlite3.Error, IntegrityError=sqlite3.IntegrityError)
         def execute(sql, parameters=()):
