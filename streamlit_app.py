@@ -19,6 +19,8 @@ from inventory import (FIELDS, ValidationError, amount, csv_bytes, inr, line_val
                        load_table, normalize_header, quantity, validate_table)
 from stocklist import Stocklist
 from demo_access import demo_profiles
+from demo_access import PROFILES
+from hosted_demo import DemoWorkspace
 from frontend import (apply_brand, access_form, sidebar_brand, workspace_bar,
                       attention_summary, workspace_footer, PAGE_ICONS)
 
@@ -33,19 +35,46 @@ def connection_error():
     st.button('Try again', key='retry_database')
     st.stop()
 
-if os.getenv('VERCEL') and not config.SQLITE_CLOUD_URL:
+demo_workspace = st.session_state.get('demo_workspace')
+if demo_workspace is None and not st.session_state.get('auth_token'):
+    with st.expander('Explore a demo workspace', expanded=True):
+        st.caption('Try sample stock, purchases and sales. Your demo is private to this session; changes are temporary and email sending is off.')
+        for column, (role, (label, description)) in zip(st.columns(4), PROFILES.items()):
+            with column:
+                if st.button(label, key='hosted_demo_' + role, width='stretch'):
+                    try:
+                        with st.spinner('Preparing your sample business...'):
+                            demo_workspace = DemoWorkspace(role)
+                    except (ValidationError, sqlite3.Error, OSError):
+                        st.error('Could not prepare the demo. Please try again.')
+                        st.stop()
+                    st.session_state.clear()
+                    st.session_state['demo_workspace'] = demo_workspace
+                    st.session_state['auth_token'] = demo_workspace.token
+                    st.rerun()
+                st.caption(description)
+if demo_workspace is not None:
+    st.info('Demo workspace · Sample data only · Changes reset when you leave or your session ends.')
+    if st.button('Leave demo', key='leave_demo'):
+        demo_workspace.close()
+        st.session_state.clear()
+        st.rerun()
+
+if demo_workspace is None and os.getenv('VERCEL') and not config.SQLITE_CLOUD_URL:
     st.error('Deployment setup needed: add SQLITE_CLOUD_URL in Vercel environment settings. Local database storage is disabled on Vercel.')
     st.stop()
-if config.SQLITE_CLOUD_URL and not config.SQLITE_CLOUD_URL.startswith('sqlitecloud://'):
+if demo_workspace is None and config.SQLITE_CLOUD_URL and not config.SQLITE_CLOUD_URL.startswith('sqlitecloud://'):
     st.error('SQLITE_CLOUD_URL must be a SQLite Cloud connection URL.')
     st.stop()
 try:
-    store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token'))
+    store = (demo_workspace.open(st.session_state.get('auth_token')) if demo_workspace is not None
+             else Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token')))
     needs_setup = store.needs_setup()
 except (ValidationError, sqlite3.Error) as exc:
     st.error(str(exc))
     st.stop()
-demo_accounts = [] if store.cloud else demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
+demo_accounts = [] if store.cloud or demo_workspace is not None else demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
+is_demo = demo_workspace is not None or bool(demo_accounts)
 auth_content = st.empty()
 
 if needs_setup:
@@ -76,6 +105,8 @@ except ValidationError:
                 token = store.login(credentials['username'], credentials['password'])
             st.session_state.clear()
             st.session_state['auth_token'] = token
+            if demo_workspace is not None:
+                st.session_state['demo_workspace'] = demo_workspace
             auth_content.empty()
             st.rerun()
         except ValidationError as exc:
@@ -168,6 +199,10 @@ related_tasks = {
 
 def sign_out():
     # Callbacks run before rendering so the previous role's widgets cannot survive a logout rerun.
+    if demo_workspace is not None:
+        demo_workspace.close()
+        st.session_state.clear()
+        return
     try:
         store.logout()
     except (sqlite3.Error, OSError):
@@ -191,7 +226,7 @@ elif saved_page not in pages:
     navigate_to('Overview')
 
 with sidebar_content.container():
-    sidebar_brand(business.get('business_name', config.BUSINESS_NAME), bool(demo_accounts))
+    sidebar_brand(business.get('business_name', config.BUSINESS_NAME), is_demo)
     st.html('<div class="nav-heading">WORKSPACE</div>')
     with st.container(key='workspace_navigation'):
         section = st.radio('Workspace', pages, key='page', label_visibility='collapsed', on_change=change_section,
@@ -238,7 +273,7 @@ def pick_batch(pid, lid=None, label='Batch / serial', key=None, auto=False):
 
 page_content = st.empty()
 with page_content.container(key='workspace_content'):
-    workspace_bar(business.get('business_name', config.BUSINESS_NAME), page, bool(demo_accounts))
+    workspace_bar(business.get('business_name', config.BUSINESS_NAME), page, is_demo)
     if detail:
         st.button('Back to ' + page_labels.get(section, section).lower(), key='back_to_section',
                   icon=':material/arrow_back:', on_click=navigate_to, args=(section,))

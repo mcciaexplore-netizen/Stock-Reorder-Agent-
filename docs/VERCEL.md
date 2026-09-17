@@ -64,3 +64,12 @@ They do not certify the provider network, Vercel build, or a live deployment.
 References: [Vercel Python](https://vercel.com/docs/functions/runtimes/python),
 [Vercel WebSockets](https://vercel.com/docs/functions/websockets),
 [SQLite Cloud Python SDK](https://github.com/sqlitecloud/sqlitecloud-py).
+
+
+## Public demo workspace
+
+The sign-in screen offers Owner demo, Warehouse demo, Accountant demo and Read-only demo. Each button creates a private temporary sample database for that browser session, with products, stock, purchases, sales and example operations. The demo uses normal role permissions. Email sending is blocked by the business service, including when production SMTP credentials are configured.
+
+No extra environment variables or demo cloud database are required. The live business continues to use SQLITE_CLOUD_URL; the demo never connects to it. Demo files use the operating system temporary directory, which is writable on Vercel. They are disposable and are cleaned up when leaving the demo or when its session object is released. A refresh, connection expiry or function restart may end a demo session. Do not enter real business records in the demo.
+
+Choose Leave demo or Sign out to discard the sample workspace and return to normal business sign-in. Deploy this code revision to make the buttons available on Vercel.

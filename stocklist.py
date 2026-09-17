@@ -532,6 +532,8 @@ class Stocklist(Security, InventoryOps, Purchasing, Sales, Workspace, CustomerOr
             self._audit(db, actor, 'po_placed_manually', order['number'], {'reference': reference})
 
     def send_po(self, po_id, *, actor, dry_run=True, sender=None):
+        if getattr(self, 'demo', False) and not dry_run:
+            raise ValidationError('Email sending is disabled in the demo. Use the email preview instead.')
         from tools import send_email
         sender = sender or send_email
         with self.connect(True) as db:
