@@ -5,6 +5,7 @@ import json
 from inventory import ValidationError, amount
 
 SEED_KEY = '_demo_general_business_v1'
+LEGACY_SEED_KEY = '_demo_manufacturing_v1'
 ACTOR = 'Demo setup'
 
 
@@ -14,14 +15,19 @@ def seed_sample_data(store):
     if not identity or identity['role'] != 'owner':
         raise ValidationError('Sign in as an owner before loading demo data.')
     with store.connect(True) as db:
-        row = db.execute('SELECT value FROM settings WHERE key=?', (SEED_KEY,)).fetchone()
+        # Branding changes must not cause an existing sample pack to be applied again.
+        row = db.execute('SELECT value FROM settings WHERE key=?', (LEGACY_SEED_KEY,)).fetchone()
+        seed_key = LEGACY_SEED_KEY if row else SEED_KEY
+        if row is None:
+            row = db.execute('SELECT value FROM settings WHERE key=?', (seed_key,)).fetchone()
         state = json.loads(row['value']) if row else {'date': date.today().isoformat(), 'complete': False}
         if state['complete']:
             return False
-        db.execute('INSERT OR IGNORE INTO settings VALUES(?,?)', (SEED_KEY, json.dumps(state)))
+        db.execute('INSERT OR IGNORE INTO settings VALUES(?,?)', (seed_key, json.dumps(state)))
     anchor = date.fromisoformat(state['date'])
     day = lambda offset: (anchor + timedelta(days=offset)).isoformat()
-    token = lambda name: 'demo-general-business-v1:' + name
+    token_prefix = 'demo-manufacturing-v1:' if seed_key == LEGACY_SEED_KEY else 'demo-general-business-v1:'
+    token = lambda name: token_prefix + name
 
     def find_or_create(rows, key, value, create):
         match = next((r for r in rows if r[key] == value), None)
@@ -181,5 +187,5 @@ def seed_sample_data(store):
     store.refresh_alerts()
     with store.connect(True) as db:
         state['complete'] = True
-        db.execute('UPDATE settings SET value=? WHERE key=?', (json.dumps(state), SEED_KEY))
+        db.execute('UPDATE settings SET value=? WHERE key=?', (json.dumps(state), seed_key))
     return True

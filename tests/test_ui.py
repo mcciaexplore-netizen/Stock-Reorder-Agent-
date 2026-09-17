@@ -8,6 +8,7 @@ from streamlit.testing.v1 import AppTest
 import config
 from inventory import load_table, validate_table
 from stocklist import Stocklist
+from tests.ui_navigation import open_page
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,13 +22,72 @@ class WorkspaceTests(unittest.TestCase):
         self.addCleanup(self.patch.stop)
         self.store = Stocklist(config.DATABASE_PATH)
 
-    def app(self):
+    def app(self, all_tools=True):
         if self.store.needs_setup():
             self.store.bootstrap('owner','Owner','correct horse battery staple')
         token=self.store.login('owner','correct horse battery staple')
         app=AppTest.from_file(str(ROOT/'streamlit_app.py'), default_timeout=25)
         app.session_state['auth_token']=token
+        app.session_state['show_all_tools']=all_tools
         return app.run()
+
+    def test_simple_navigation_and_links_to_extra_tools(self):
+        self.seed()
+        app = self.app(all_tools=False)
+        self.assertEqual(len(app.radio(key='page').options), 7)
+        self.assertFalse(app.toggle)
+        next(b for b in app.button if b.label == 'View alerts').click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.session_state['page'], 'Overview')
+        self.assertEqual(app.session_state['detail_page'], 'Exceptions')
+        app.button(key='back_to_section').click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.session_state['page'], 'Overview')
+        self.assertEqual(len(app.radio(key='page').options), 7)
+        open_page(app, 'Quality checks')
+        self.assertFalse(app.exception)
+        self.assertTrue(any(t.value == 'Quality checks' for t in app.title))
+        open_page(app, 'Customer orders')
+        self.assertFalse(app.exception)
+        self.assertTrue(any(t.value == 'Customer quotations and sales orders' for t in app.title))
+        app.radio(key='page').set_value('Products').run()
+        self.assertEqual(app.session_state['page'], 'Products')
+        self.assertIsNone(app.session_state['detail_page'])
+        next(b for b in app.button if b.label == 'Sign out').click().run()
+        self.assertFalse(app.radio)
+
+    def test_navigation_is_english_with_legacy_language_preferences(self):
+        app = self.app(all_tools=False)
+        self.store.save_settings({'language': 'Hindi'}, actor='Owner')
+        app.session_state['nav_language'] = 'Hindi'
+        app.run()
+        self.assertFalse(app.exception)
+        self.assertTrue(any('Overview' in label for label in app.radio(key='page').options))
+        self.assertFalse(app.toggle)
+        self.assertFalse(any('language' in s.label.lower() for s in app.selectbox))
+        app.radio(key='page').set_value('Settings').run()
+        self.assertFalse(app.exception)
+        self.assertFalse(any('language' in s.label.lower() for s in app.selectbox))
+        next(t for t in app.text_input if t.label == 'Business name').input('Test business')
+        next(b for b in app.button if b.label == 'Save business settings').click().run()
+        self.assertFalse(app.exception)
+        self.assertFalse(app.error)
+        self.assertEqual(self.store.settings()['language'], 'English')
+
+    def test_product_edit_preserves_collapsed_optional_details(self):
+        pid = self.store.save_product(dict(item_code='DETAILS', item_name='Original name', unit='Pcs',
+            category='Tools', barcode='123456789', unit_price='10', selling_price='20',
+            reorder_level='5', reorder_qty='12'), opening='7', actor='Owner', token='details')
+        app = self.app(all_tools=False)
+        app.radio(key='page').set_value('Products').run()
+        next(s for s in app.selectbox if s.label == 'Product record').select(pid).run()
+        next(t for t in app.text_input if t.label == 'Product name').input('Updated name')
+        next(b for b in app.button if b.label == 'Save product').click().run()
+        self.assertFalse(app.exception)
+        product = next(p for p in self.store.products() if p['id'] == pid)
+        self.assertEqual((product['item_name'], product['category'], product['barcode'],
+                          product['reorder_qty'], product['stock']),
+                         ('Updated name', 'Tools', '123456789', 12000, 7000))
 
     def seed(self):
         records, errors = validate_table(load_table(ROOT/'inventory.xlsx'))
@@ -37,14 +97,14 @@ class WorkspaceTests(unittest.TestCase):
     def test_empty_workspace_and_all_pages_load(self):
         app = self.app()
         for page in ['Overview','Products','Suppliers','Stock movements','Purchase orders','Import and backup',
-                     'Locations and reservations','Tracking and units','Assembly and jobs','Quotations and bills',
-                     'Sales and invoices','Documents','Returnables and repairs','Reports','Exceptions','Offline entry','Settings']:
-            app.radio(key='page').set_value(page).run()
+                     'Locations and reservations','Tracking and units','Customer orders','Quotations and bills',
+                     'Sales and invoices','Quality checks','Reports','Exceptions','Settings']:
+            open_page(app, page)
             self.assertFalse(app.exception, f'{page}: {[e.value for e in app.exception]}')
 
     def test_sample_import_from_preview(self):
         app = self.app()
-        app.radio(key='page').set_value('Import and backup').run()
+        open_page(app, 'Import and backup')
         next(c for c in app.checkbox if c.label=='Preview the supplied sample inventory').check().run()
         self.assertFalse(app.exception)
         next(c for c in app.checkbox if c.label=='I reviewed the products and opening balances.').check().run()
@@ -82,9 +142,9 @@ class WorkspaceTests(unittest.TestCase):
         self.seed()
         app = self.app()
         for page in ['Products','Suppliers','Stock movements','Purchase orders','Import and backup',
-                     'Locations and reservations','Tracking and units','Assembly and jobs','Quotations and bills',
-                     'Sales and invoices','Documents','Returnables and repairs','Reports','Exceptions','Offline entry','Settings']:
-            app.radio(key='page').set_value(page).run()
+                     'Locations and reservations','Tracking and units','Customer orders','Quotations and bills',
+                     'Sales and invoices','Quality checks','Reports','Exceptions','Settings']:
+            open_page(app, page)
             self.assertFalse(app.exception, f'{page}: {[e.value for e in app.exception]}')
 
     def test_physical_count_does_not_overwrite_concurrent_sale(self):
@@ -116,20 +176,24 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual(app.title[0].value,'Sign in to Stocklist')
         self.assertFalse(app.dataframe)
 
-    def test_production_form_posts_components_and_output(self):
+    def test_removed_pages_return_to_overview_without_changing_stock(self):
         self.seed()
-        raw=self.store.products()[0]
-        output=self.store.save_product(dict(item_code='OUTPUT',item_name='Finished frame',unit='Pcs',unit_price='0',selling_price='100',reorder_level='0',reorder_qty='0'),actor='Owner',token='output')
-        self.store.save_recipe(output,[{'product_id':raw['id'],'qty':'1'}],actor='Owner')
+        before = self.store.products()
         app=self.app()
-        app.radio(key='page').set_value('Assembly and jobs').run()
-        next(s for s in app.selectbox if s.label=='Finished product / kit').select(output).run()
-        next(t for t in app.text_input if t.label=='Finished quantity').input('1')
-        next(t for t in app.text_input if t.label=='Assembly job / batch reference').input('WO-UI')
-        next(b for b in app.button if b.label=='Record assembly').click().run()
-        self.assertFalse(app.exception)
-        self.assertEqual(next(p['stock'] for p in self.store.products() if p['id']==output),1000)
-        self.assertEqual(next(p['stock'] for p in self.store.products() if p['id']==raw['id']),raw['stock']-1000)
+        for retired in ['Work orders', 'Material planning',
+                        'Outside work tracking', 'Cost analysis', 'Assembly and jobs',
+                        'Documents', 'Offline entry', 'Returnables and repairs']:
+            self.assertFalse(any(retired in label for label in app.radio(key='page').options))
+            # Resume saved state before building widgets; a removed radio option
+            # cannot be submitted through the current menu by the test driver.
+            app = AppTest.from_file(str(ROOT/'streamlit_app.py'), default_timeout=25)
+            app.session_state['auth_token'] = self.store.session_token
+            app.session_state['show_all_tools'] = True
+            app.session_state['page'] = retired
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.session_state['page'], 'Overview')
+        self.assertEqual(self.store.products(), before)
 
     def test_sales_invoice_form_dispatches_stock(self):
         self.seed()
@@ -150,7 +214,7 @@ class WorkspaceTests(unittest.TestCase):
         oid=self.store.create_po(product['supplier_id'],[{'product_id':product['id'],'qty':'1','price':'10'}],actor='Owner',token='billorder')
         self.store.approve_po(oid,actor='Owner',revision=1)
         self.store.place_manually(oid,'Supplier confirmed',actor='Owner',revision=1)
-        app=self.app(); app.radio(key='page').set_value('Quotations and bills').run()
+        app=self.app(); open_page(app, 'Quotations and bills')
         app.radio(key='purchasing_section').set_value('Supplier bill verification').run()
         self.assertFalse(app.exception)
         next(t for t in app.text_input if t.label=='Supplier invoice number').input('B-UI')

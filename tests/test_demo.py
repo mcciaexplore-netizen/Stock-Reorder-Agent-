@@ -11,6 +11,7 @@ from demo_access import demo_profiles, write_demo_access
 from demo_data import seed_sample_data
 from inventory import ValidationError
 from stocklist import Stocklist
+from tests.ui_navigation import open_page
 
 ROOT = Path(__file__).resolve().parents[1]
 PASSWORD = 'Disposable demo test password 123'
@@ -71,6 +72,31 @@ class DemoTests(unittest.TestCase):
         self.assertEqual(len(self.store.batches()), 5)
         self.assertEqual(self.store.health()['ledger_balance_errors'], 0)
 
+    def test_legacy_demo_is_not_reseeded_after_branding_change(self):
+        with patch('demo_data.SEED_KEY', '_demo_manufacturing_v1'):
+            seed_sample_data(self.store)
+        before = self.snapshot()
+        # A failed launch with the renamed pack may already have created this marker.
+        with self.store.connect(True) as db:
+            db.execute('INSERT INTO settings VALUES(?,?)',
+                       ('_demo_general_business_v1', '{"date":"2026-09-17","complete":false}'))
+        self.assertFalse(seed_sample_data(self.store))
+        self.assertEqual(self.snapshot(), before)
+
+    def test_interrupted_legacy_demo_keeps_original_transaction_tokens(self):
+        with patch('demo_data.SEED_KEY', '_demo_manufacturing_v1'), \
+                patch.object(self.store, 'save_bill', side_effect=RuntimeError('Interrupted')):
+            with self.assertRaises(RuntimeError):
+                seed_sample_data(self.store)
+        with self.store.connect() as db:
+            before = [tuple(r) for r in db.execute('SELECT id,delta,value_delta FROM movements')]
+        self.assertTrue(seed_sample_data(self.store))
+        with self.store.connect() as db:
+            after = [tuple(r) for r in db.execute('SELECT id,delta,value_delta FROM movements')]
+        self.assertEqual(after[:len(before)], before)
+        self.assertEqual(len(self.store.batches()), 5)
+        self.assertEqual(self.store.health()['ledger_balance_errors'], 0)
+
     def test_access_is_explicit_and_bound_to_original_workspace(self):
         self.assertEqual(demo_profiles(self.path, ''), [])
         self.assertEqual(demo_profiles(self.path, self.access), [])
@@ -126,9 +152,9 @@ class DemoTests(unittest.TestCase):
                 self.assertFalse(any(b.key and b.key.startswith('demo_login_') for b in app.button))
                 if profile['role'] == 'owner':
                     for page in ['Products', 'Purchase orders', 'Locations and reservations', 'Tracking and units',
-                                 'Assembly and jobs', 'Quotations and bills', 'Sales and invoices', 'Documents',
-                                 'Returnables and repairs', 'Reports', 'Exceptions', 'Offline entry', 'Settings']:
-                        app.radio(key='page').set_value(page).run()
+                                 'Customer orders', 'Quotations and bills', 'Sales and invoices',
+                                 'Quality checks', 'Reports', 'Exceptions', 'Settings']:
+                        open_page(app, page)
                         self.assertFalse(app.exception, page)
                 next(b for b in app.button if b.label == 'Sign out').click().run()
                 self.assertEqual(app.title[0].value, 'Sign in to Stocklist')

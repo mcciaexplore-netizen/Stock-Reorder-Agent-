@@ -11,11 +11,10 @@ with st.form('business_settings'):
     budget=st.text_input('Monthly purchase approval budget (₹, 0 means unlimited)',value=business.get('monthly_budget','0'))
     backups=st.checkbox('Enable automatic local backups',value=business.get('backup_enabled')=='true')
     days=st.number_input('Days between backups',min_value=1,max_value=30,value=int(business.get('backup_days','1')))
-    language=st.selectbox('Default navigation language',['English','Hindi'],index=int(business.get('language')=='Hindi'))
     submit=st.form_submit_button('Save business settings',type='primary')
 if submit:
     act('settings',lambda:store.save_settings({'business_name':name,'business_address':address,'gstin':gst,'state_code':state,
-        'monthly_budget':budget,'backup_enabled':str(backups).lower(),'backup_days':str(days),'default_industry':'general','language':language},actor=actor),'Business settings saved.')
+        'monthly_budget':budget,'backup_enabled':str(backups).lower(),'backup_days':str(days),'default_industry':'general','language':'English'},actor=actor),'Business settings saved.')
 st.caption('Backups run while an owner has the app open, or through the supplied maintenance worker. Backups are stored beside the database in a backups folder. Copy important backups to another device.')
 if st.button('Run backup and exception check now'):
     act('maintenance',lambda:store.run_maintenance(actor=actor),lambda result:result)

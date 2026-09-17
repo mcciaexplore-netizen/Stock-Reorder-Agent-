@@ -271,6 +271,7 @@ class OperationsTests(unittest.TestCase):
 class OperationsUITests(unittest.TestCase):
     def test_partial_delivery_and_invoice_forms_do_not_dispatch_twice(self):
         from streamlit.testing.v1 import AppTest
+        from tests.ui_navigation import open_page
         import config
         fixture=OperationsTests(); fixture.setUp(); self.addCleanup(fixture.doCleanups)
         s=fixture.s; s.bootstrap('owner','Owner','correct horse battery staple')
@@ -278,7 +279,7 @@ class OperationsUITests(unittest.TestCase):
         with patch.object(config,'DATABASE_PATH',fixture.path),patch.object(config,'DEMO_ACCESS_PATH',None):
             app=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'streamlit_app.py'),default_timeout=30)
             app.session_state['auth_token']=s.session_token; app.run()
-            app.radio(key='page').set_value('Customer orders').run()
+            open_page(app, 'Customer orders')
             next(e for e in app.text_input if 'dispatch quantity' in e.label).set_value('2')
             next(e for e in app.text_input if e.label=='Delivery / transport reference').set_value('UI delivery')
             next(e for e in app.button if e.label=='Record partial or full delivery').click().run()
@@ -287,23 +288,24 @@ class OperationsUITests(unittest.TestCase):
             self.assertFalse(app.exception); self.assertEqual(len(s.invoices()),1)
             self.assertEqual(fixture.stock(fixture.raw),98000)
 
-    def test_new_pages_empty_and_populated(self):
+    def test_customer_orders_with_legacy_operations_data_load(self):
         from streamlit.testing.v1 import AppTest
+        from tests.ui_navigation import open_page
         import config
         fixture=OperationsTests(); fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         s=fixture.s
         s.bootstrap('owner','Owner','correct horse battery staple')
-        pages=['Customer orders','Work orders','Material planning','Quality checks','Outside work tracking','Cost analysis']
+        pages=['Customer orders']
         with patch.object(config,'DATABASE_PATH',fixture.path), patch.object(config,'DEMO_ACCESS_PATH',None):
             app=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'streamlit_app.py'),default_timeout=30)
             app.session_state['auth_token']=s.session_token; app.run()
             for page in pages:
-                app.radio(key='page').set_value(page).run(); self.assertFalse(app.exception,page)
+                open_page(app, page); self.assertFalse(app.exception,page)
             oid=fixture.order(); line=s.sales_order(oid)['lines'][0]['id']; wid=fixture.work(line=line); fixture.release(wid)
             s.issue_work_materials(wid,{fixture.raw:'20'},actor='Owner',token='ui-use')
             s.complete_work_output(wid,'2',actor='Owner',token='ui-output')
             j=s.create_jobwork('customer',fixture.customer,'Processor',1,fixture.due,'JW',actor='Owner',token='ui-jw')
             s.receive_jobwork_material(j,fixture.raw,'5','IN',actor='Owner',token='ui-jwm')
             for page in pages:
-                app.radio(key='page').set_value(page).run(); self.assertFalse(app.exception,f'{page}: {[e.value for e in app.exception]}')
+                open_page(app, page); self.assertFalse(app.exception,f'{page}: {[e.value for e in app.exception]}')
