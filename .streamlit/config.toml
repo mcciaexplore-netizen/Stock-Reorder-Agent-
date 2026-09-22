@@ -1,34 +1,33 @@
 [theme]
 base = "light"
-primaryColor = "#146CAA"
-backgroundColor = "#F5F8FC"
-secondaryBackgroundColor = "#EDF3F8"
-textColor = "#203B50"
-# Font families verified against MCCIA's official stylesheet; see docs/BRANDING.md.
-font = "Candara, 'Segoe UI', sans-serif"
-headingFont = "'Segoe', 'Segoe UI', sans-serif"
-baseFontSize = 17
+primaryColor = "#0284C7"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#F1F5F9"
+textColor = "#0F172A"
+font = "'Plus Jakarta Sans', 'Segoe UI', sans-serif"
+headingFont = "'Plus Jakarta Sans', 'Segoe UI', sans-serif"
+baseFontSize = 16
 baseFontWeight = 400
-headingFontSizes = ["34px", "25px", "21px", "19px", "17px", "15px"]
-headingFontWeights = [600, 600, 600, 600, 600, 600]
+headingFontSizes = ["34px", "26px", "22px", "18px", "16px", "14px"]
+headingFontWeights = [700, 700, 600, 600, 600, 600]
 baseRadius = "10px"
 buttonRadius = "8px"
-borderColor = "#D9E3ED"
+borderColor = "#E2E8F0"
 showWidgetBorder = true
 showSidebarBorder = true
-dataframeBorderColor = "#D9E3ED"
-dataframeHeaderBackgroundColor = "#EAF1F7"
-greenColor = "#14804A"
-greenTextColor = "#17643F"
-greenBackgroundColor = "#E8F5ED"
-linkColor = "#146CAA"
-chartCategoricalColors = ["#146CAA", "#159452", "#D39B39", "#7189A0", "#AE5A64"]
+dataframeBorderColor = "#E2E8F0"
+dataframeHeaderBackgroundColor = "#F1F5F9"
+greenColor = "#059669"
+greenTextColor = "#065F46"
+greenBackgroundColor = "#ECFDF5"
+linkColor = "#0284C7"
+chartCategoricalColors = ["#0284C7", "#059669", "#D97706", "#64748B", "#E11D48"]
 
 [theme.sidebar]
-font = "'Segoe UI', Candara, sans-serif"
+font = "'Plus Jakarta Sans', 'Segoe UI', sans-serif"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#EFF5FA"
-textColor = "#304B60"
+secondaryBackgroundColor = "#F8FAFC"
+textColor = "#1E293B"
 
 [client]
 toolbarMode = "minimal"

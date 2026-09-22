@@ -26,6 +26,7 @@ st.set_page_config(page_title='Stocklist | MCCIA', page_icon=':material/inventor
 apply_brand()
 store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token'))
 demo_accounts = demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
+is_demo = bool(demo_accounts)
 auth_content = st.empty()
 
 if store.needs_setup():
