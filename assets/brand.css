@@ -119,19 +119,26 @@ p, span, label, div { font-family: var(--sl-font-sans); }
   font-weight: 600;
   font-size: 14.5px;
   border-radius: var(--sl-radius-sm);
-  padding: 0.55rem 1.25rem;
-  min-height: 2.6rem;
+  padding: 0.6rem 1.25rem;
+  min-height: 2.75rem;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: var(--sl-shadow-sm);
   border: 1px solid var(--sl-border);
+  background-color: #ffffff;
+  color: var(--sl-ink-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 [data-testid="stButton"] button:hover,
 [data-testid="stDownloadButton"] button:hover {
   transform: translateY(-1px);
   box-shadow: var(--sl-shadow-md);
-  border-color: #cbd5e1;
+  border-color: #94a3b8;
   background-color: #f8fafc;
+  color: var(--sl-primary);
 }
 
 [data-testid="stButton"] button[kind="primary"],
@@ -139,14 +146,34 @@ p, span, label, div { font-family: var(--sl-font-sans); }
   background: var(--sl-primary-gradient) !important;
   color: #ffffff !important;
   border: none !important;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.28) !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.32) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
 }
 
 [data-testid="stButton"] button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.38) !important;
-  filter: brightness(1.04);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.42) !important;
+  filter: brightness(1.05);
+}
+
+/* Secondary & Switcher Link Buttons */
+.st-key-toggle_to_login button,
+.st-key-toggle_to_signup button {
+  background: #f8fafc !important;
+  border: 1px dashed #cbd5e1 !important;
+  color: var(--sl-primary-dark) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  margin-top: 0.75rem;
+}
+
+.st-key-toggle_to_login button:hover,
+.st-key-toggle_to_signup button:hover {
+  background: #f0f9ff !important;
+  border: 1px solid var(--sl-primary) !important;
+  color: var(--sl-primary) !important;
 }
 
 /* Forms & Cards */

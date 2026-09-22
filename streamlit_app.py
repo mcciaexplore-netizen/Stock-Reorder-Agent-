@@ -28,31 +28,32 @@ store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth
 demo_accounts = demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
 is_demo = bool(demo_accounts)
 auth_content = st.empty()
-
-if store.needs_setup():
-    with auth_content.container():
-        access = access_form(setup=True)
-    if access['submitted']:
-        try:
-            if access['password'] != access['confirm']:
-                raise ValidationError('Passwords do not match.')
-            with access['feedback'].container(), st.spinner('Creating your owner account...'):
-                st.session_state['auth_token'] = store.bootstrap(access['username'], access['name'], access['password'])
-            auth_content.empty()
-            st.rerun()
-        except ValidationError as exc:
-            access['feedback'].error(str(exc))
-    st.stop()
+identity = None
 try:
     identity = store.identity()
 except ValidationError:
+    identity = None
+
+if not identity:
+    needs_initial_setup = store.needs_setup()
     with auth_content.container():
-        access = access_form(demos=demo_accounts)
+        access = access_form(setup=needs_initial_setup, demos=demo_accounts)
+    
     if access['submitted'] or access['demo']:
         try:
             credentials = access['demo'] or access
-            with access['feedback'].container(), st.spinner('Opening your workspace...'):
-                token = store.login(credentials['username'], credentials['password'])
+            if access['is_register']:
+                if access['password'] != access['confirm']:
+                    raise ValidationError('Passwords do not match.')
+                with access['feedback'].container(), st.spinner('Creating your account...'):
+                    if store.needs_setup():
+                        token = store.bootstrap(access['username'], access['name'], access['password'])
+                    else:
+                        token = store.register(access['username'], access['name'], access['password'])
+            else:
+                with access['feedback'].container(), st.spinner('Opening your workspace...'):
+                    token = store.login(credentials['username'], credentials['password'])
+            
             st.session_state.clear()
             st.session_state['auth_token'] = token
             auth_content.empty()
@@ -120,24 +121,30 @@ def order_lines(order):
             for l in order['lines']]
 
 
-extra_pages = {'Locations and reservations':'locations.py', 'Tracking and units':'tracking.py',
-               'Customer orders':'customer_orders.py', 'Work orders':'work_orders.py', 'Material planning':'material_planning.py',
-               'Quality checks':'quality.py', 'Outside work tracking':'jobwork.py', 'Cost analysis':'production_costs.py',
-               'Assembly and jobs':'manufacturing.py', 'Quotations and bills':'purchasing.py',
-               'Sales and invoices':'sales.py', 'Documents':'documents.py', 'Returnables and repairs':'returns.py',
-               'Reports':'reports.py', 'Exceptions':'exceptions.py', 'Offline entry':'offline.py', 'Settings':'settings.py'}
-pages = ['Overview', 'Products', 'Stock movements', 'Locations and reservations', 'Tracking and units',
-         'Customer orders', 'Work orders', 'Material planning', 'Quality checks', 'Outside work tracking', 'Cost analysis',
-         'Assembly and jobs', 'Quotations and bills', 'Purchase orders', 'Sales and invoices',
-         'Suppliers', 'Returnables and repairs', 'Reports', 'Exceptions', 'Documents',
-         'Offline entry', 'Import and backup', 'Settings']
-translations = {'Overview':'अवलोकन', 'Products':'उत्पाद', 'Suppliers':'आपूर्तिकर्ता', 'Stock movements':'स्टॉक लेनदेन',
-    'Customer orders':'ग्राहक आदेश', 'Work orders':'उत्पादन आदेश', 'Material planning':'सामग्री योजना',
-    'Quality checks':'गुणवत्ता जांच', 'Outside work tracking':'बाहरी काम ट्रैकिंग', 'Cost analysis':'लागत विश्लेषण',
-    'Purchase orders':'खरीद आदेश', 'Import and backup':'आयात और बैकअप', 'Assembly and jobs':'असेंबली और जॉब',
-    'Locations and reservations':'स्थान और आरक्षण', 'Tracking and units':'बैच और इकाइयाँ', 'Sales and invoices':'बिक्री और बिल',
-    'Quotations and bills':'कोटेशन और खरीद बिल', 'Documents':'दस्तावेज़', 'Returnables and repairs':'वापसी और मरम्मत',
-    'Reports':'रिपोर्ट', 'Exceptions':'ध्यान देने योग्य', 'Offline entry':'ऑफ़लाइन प्रविष्टि', 'Settings':'सेटिंग्स'}
+extra_pages = {
+    'Reports': 'reports.py',
+    'Settings': 'settings.py',
+}
+pages = [
+    'Overview',
+    'Products',
+    'Stock movements',
+    'Purchase orders',
+    'Suppliers',
+    'Reports',
+    'Import and backup',
+    'Settings',
+]
+translations = {
+    'Overview': 'अवलोकन',
+    'Products': 'उत्पाद',
+    'Suppliers': 'आपूर्तिकर्ता',
+    'Stock movements': 'स्टॉक लेनदेन',
+    'Purchase orders': 'खरीद आदेश',
+    'Import and backup': 'आयात और बैकअप',
+    'Reports': 'रिपोर्ट',
+    'Settings': 'सेटिंग्स',
+}
 
 def sign_out():
     # Callbacks run before rendering so the previous role's widgets cannot survive a logout rerun.
@@ -243,16 +250,69 @@ with page_content.container(key='workspace_content'):
             with aside:
                 with st.container(key='attention_panel'):
                     st.subheader('Needs attention')
-                    st.caption('Unreviewed exceptions in your workspace.')
+                    st.caption('Unreviewed alerts in your workspace.')
                     attention_summary(store.alerts())
-                    st.button('Review exceptions', icon=':material/arrow_forward:', on_click=navigate_to,
-                              args=('Exceptions',), width='stretch')
+                    st.button('View purchase orders', icon=':material/shopping_cart:', on_click=navigate_to,
+                              args=('Purchase orders',), width='stretch')
             st.subheader('Current stock')
             grid(stock_rows(products))
         st.caption('Stock value uses current product purchase prices; it is not FIFO or weighted-average accounting valuation.')
 
     elif page == 'Products':
         st.title('Products')
+        
+        # Quick Excel / CSV File Upload & Import Section
+        with st.expander('📤 Upload Excel / CSV Product Sheet', expanded=not bool(products)):
+            st.caption('Upload an Excel (.xlsx, .xls) or CSV spreadsheet to bulk-add or update your product catalog.')
+            product_upload = st.file_uploader('Select Excel/CSV file', type=['xlsx', 'xls', 'csv'], key='products_page_uploader')
+            
+            template_data = [{
+                'Item Code': 'SKU-ST-001', 'Item Name': 'A4 Copier Paper', 'Category': 'Stationery',
+                'Unit': 'Reams', 'Current Stock': 15, 'Reorder Level': 30, 'Reorder Qty': 50,
+                'Unit Price': 280.0, 'Selling Price': 350.0, 'Supplier Name': 'Sharma Stationery',
+                'Supplier Email': 'orders@sharmastationery.com', 'Barcode': '890123450001'
+            }]
+            buf = io.BytesIO()
+            pd.DataFrame(template_data).to_excel(buf, index=False)
+            col_dl1, col_dl2 = st.columns([1, 1])
+            with col_dl1:
+                st.download_button('📥 Download Sample Excel Template', buf.getvalue(), 'sample_products_template.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', icon=':material/download:')
+            
+            if product_upload is not None:
+                upload_bytes = product_upload.getvalue()
+                upload_fp = hashlib.sha256(upload_bytes).hexdigest()
+                try:
+                    df_upload = load_table(io.BytesIO(upload_bytes), product_upload.name)
+                    st.write('**Spreadsheet Preview (First 5 rows):**')
+                    st.dataframe(df_upload.head(5), use_container_width=True)
+                    
+                    mapping = {}
+                    options = ['Ignore'] + list(FIELDS)
+                    with st.expander('Review column mappings'):
+                        map_cols = st.columns(3)
+                        for idx, col in enumerate(df_upload.columns):
+                            inferred = normalize_header(col)
+                            choice = map_cols[idx % 3].selectbox(str(col), options, index=options.index(inferred) if inferred in options else 0, key=f'p_map_{upload_fp}_{col}')
+                            mapping[str(col)] = choice
+                    
+                    records, errors = validate_table(df_upload, mapping)
+                    existing_skus = {p['item_code'].casefold() for p in products}
+                    for row in records:
+                        if row['item_code'].casefold() in existing_skus:
+                            errors.append(f'SKU "{row["item_code"]}" already exists. Use the edit form below to update existing products.')
+                    
+                    if errors:
+                        st.error(f'Cannot import file. Found {len(errors)} issue(s):')
+                        for err in errors[:15]:
+                            st.write(f'• {err}')
+                    else:
+                        st.success(f'✅ {len(records)} products validated and ready to import.')
+                        if st.button('Confirm & Import All Products', type='primary', icon=':material/cloud_upload:'):
+                            act('prod_upload_' + upload_fp, lambda: store.import_products(records, actor=actor, token=operation_key('import_' + upload_fp)),
+                                lambda count: f'Successfully imported {count} products!')
+                except Exception as ex:
+                    st.error(f'Error reading file: {ex}')
+
         search = st.text_input('Search products', placeholder='Name, SKU, category or barcode')
         filtered = [p for p in products if search.casefold() in ' '.join(str(p.get(k) or '') for k in ('item_name','item_code','category','barcode')).casefold()]
         if filtered:
@@ -260,7 +320,7 @@ with page_content.container(key='workspace_content'):
         elif products:
             st.info('No products match your search.')
         else:
-            st.info('Add a product below or import your inventory.')
+            st.info('Add a product below or upload an Excel sheet.')
         st.subheader('Add or edit a product')
         selected = st.selectbox('Product record', [None] + list(product_lookup), format_func=lambda x: 'Add new product' if x is None else product_label(x))
         current = product_lookup.get(selected, {})

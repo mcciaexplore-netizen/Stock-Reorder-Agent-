@@ -27,7 +27,13 @@ def apply_brand():
 
 def access_form(*, setup=False, demos=()):
     """Native form values are returned to the existing authentication flow."""
-    result = dict(submitted=False, demo=None, username='', password='', name='', confirm='')
+    result = dict(submitted=False, demo=None, username='', password='', name='', confirm='', is_register=False)
+    if 'auth_mode' not in st.session_state:
+        st.session_state['auth_mode'] = 'setup' if setup else 'login'
+    
+    current_mode = st.session_state['auth_mode']
+    is_signup = (current_mode == 'setup')
+
     with st.container(key='auth_shell'):
         left, right = st.columns([1.08, 1], gap='large')
         with left:
@@ -72,22 +78,34 @@ def access_form(*, setup=False, demos=()):
             </section>''')
         with right:
             with st.container(key='signin_panel'):
-                st.title('Set up Stocklist' if setup else 'Sign in to Stocklist')
-                st.caption('Create your owner account to get started.' if setup else 'Welcome back. Open your business workspace.')
+                st.title('Create your Account' if is_signup else 'Sign in to Stocklist')
+                st.caption('Enter your details to create a new workspace account.' if is_signup else 'Welcome back. Open your business workspace.')
                 result['feedback'] = st.empty()
-                with st.form('setup_owner' if setup else 'login', border=False):
-                    result['username'] = st.text_input('Owner username' if setup else 'Username', placeholder='Your username')
-                    if setup:
-                        result['name'] = st.text_input('Your name')
-                    result['password'] = st.text_input('Password (at least 12 characters)' if setup else 'Password', type='password', placeholder='••••••••••••')
-                    if setup:
+                result['is_register'] = is_signup
+
+                with st.form('auth_form', border=False):
+                    result['username'] = st.text_input('Username', placeholder='Your username')
+                    if is_signup:
+                        result['name'] = st.text_input('Your full name', placeholder='e.g. Aarushi Gupta')
+                    result['password'] = st.text_input('Password (at least 12 characters)' if is_signup else 'Password', type='password', placeholder='••••••••••••')
+                    if is_signup:
                         result['confirm'] = st.text_input('Confirm password', type='password', placeholder='••••••••••••')
                     
-                    submit_label = 'Create owner account' if setup else 'Sign in'
+                    submit_label = 'Create account' if is_signup else 'Sign in'
                     result['submitted'] = st.form_submit_button(submit_label,
                         type='primary', width='stretch', icon=':material/arrow_forward:', icon_position='right')
                 
-                if demos:
+                # Switch between Sign In and Create Account
+                if is_signup:
+                    if st.button('Already have an account? Sign in', key='toggle_to_login', width='stretch', icon=':material/login:'):
+                        st.session_state['auth_mode'] = 'login'
+                        st.rerun()
+                else:
+                    if st.button('New user? Create an account', key='toggle_to_signup', width='stretch', icon=':material/person_add:'):
+                        st.session_state['auth_mode'] = 'setup'
+                        st.rerun()
+
+                if demos and not is_signup:
                     with st.container(key='demo_access'):
                         st.html('''<div class="demo-divider">
                             <span>OR INSTANT EXPLORATION</span>

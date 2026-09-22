@@ -157,15 +157,28 @@ class Security:
                 if not hashed:
                     raise ValidationError('A password is required for a new user.')
                 user_id = db.execute("INSERT INTO users(username,name,password,role,active,created_at) VALUES(?,?,?,?,?,datetime('now'))", (username,name,hashed,role,int(active))).lastrowid
-            self._audit(db,actor,'user_saved',user_id,{'role':role,'active':active})
-        return user_id
+    def register(self, username, name, password):
+        username = text(username, 'Username', required=True, limit=80).casefold()
+        name = text(name, 'Name', required=True, limit=100)
+        hashed = password_hash(password)
+        token = secrets.token_urlsafe(32)
+        with self._auth_db() as db:
+            if db.execute('SELECT 1 FROM users WHERE username=?', (username,)).fetchone():
+                raise ValidationError('Username already taken. Please choose another one.')
+            has_users = db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
+            role = 'owner' if not has_users else 'viewer'
+            uid = db.execute("INSERT INTO users(username,name,password,role,created_at) VALUES(?,?,?,?,datetime('now'))", (username, name, hashed, role)).lastrowid
+            db.execute('INSERT INTO sessions VALUES(?,?,?)', (hashlib.sha256(token.encode()).hexdigest(), uid, int(time.time()) + 8 * 3600))
+            self._audit(db, name, 'user_registered', username, {'role': role})
+        self.session_token = token
+        return token
 
 
 def protect(cls):
     """Guard every business method, including newly added ones (read-only by default)."""
-    excluded = {'connect','needs_setup','bootstrap','login','logout','identity','allowed','draft_email'}
+    excluded = {'connect', 'needs_setup', 'bootstrap', 'login', 'logout', 'register', 'identity', 'allowed', 'draft_email'}
     for name in dir(cls):
-        method = getattr(cls,name)
+        method = getattr(cls, name)
         if name.startswith('_') or name in excluded or not callable(method):
             continue
         permission = PERMISSIONS.get(name,'read')
