@@ -84,17 +84,23 @@ with col1:
 
 with col2:
     if qr_payload:
-        # Public Verification Link that opens when scanned by smartphone camera or any external scanner
+        # Dynamic URL Resolution for local development vs Vercel production deployment
+        base_domain = config.APP_URL
+        if not base_domain:
+            base_domain = "https://" + st.context.headers.get("Host", "127.0.0.1:8502") if hasattr(st, "context") and st.context.headers.get("Host") else "http://127.0.0.1:8502"
+        base_domain = base_domain.rstrip("/")
+
         if qr_type == 'Product SKU':
-            public_url = f"http://127.0.0.1:8502/?sku={urllib.parse.quote(p['item_code'])}"
+            public_url = f"{base_domain}/?sku={urllib.parse.quote(p['item_code'])}"
         else:
-            public_url = f"http://127.0.0.1:8502/?sku={urllib.parse.quote(p['item_code'])}&batch={urllib.parse.quote(b_choice['code'])}"
+            public_url = f"{base_domain}/?sku={urllib.parse.quote(p['item_code'])}&batch={urllib.parse.quote(b_choice['code'])}"
         
         encoded_data = urllib.parse.quote(public_url)
         qr_img_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_data}"
         
         st.markdown(f"### {qr_title}")
         st.caption(f"🔗 Public Link: `{public_url}`")
+
 
         
         # Thermal Barcode Sticker Badge UI

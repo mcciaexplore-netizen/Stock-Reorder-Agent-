@@ -26,6 +26,8 @@ DATABASE_PATH = Path(os.getenv("DATABASE_PATH", str(BASE_DIR / "data" / "stockli
 # ── Behaviour ────────────────────────────────────────────────
 BUSINESS_NAME:    str  = os.getenv("BUSINESS_NAME",    "Your Company")
 BUSINESS_ADDRESS: str  = os.getenv("BUSINESS_ADDRESS", "")   # optional, appears in PO header
+APP_URL:          str  = os.getenv("APP_URL", "").strip()    # Production domain URL, e.g. https://stock-reorder-agent.vercel.app
+
 
 # DRY_RUN=true  → previews POs in terminal, does NOT send emails
 # DRY_RUN=false → sends PO emails via Gmail
