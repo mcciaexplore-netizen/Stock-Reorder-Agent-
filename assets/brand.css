@@ -523,23 +523,28 @@ p, span, label, div { font-family: var(--sl-font-sans); }
 /* ==========================================================================
    Sidebar Navigation & User Profile
    ========================================================================== */
+/* ==========================================================================
+   Sidebar Navigation & User Profile - Premium UI/UX Edition
+   ========================================================================== */
 [data-testid="stSidebar"] {
-  background-color: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border-right: 1px solid var(--sl-border);
-  min-width: 275px;
-  max-width: 305px;
+  min-width: 285px;
+  max-width: 315px;
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.03);
 }
 
 [data-testid="stSidebarUserContent"] {
-  padding: 1.5rem 1.15rem 1.8rem;
+  padding: 1.6rem 1.25rem 2rem;
 }
 
 .sidebar-brand-card {
-  padding: 0.75rem 0.85rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
-  border: 1px solid rgba(186, 230, 253, 0.7);
-  border-radius: var(--sl-radius-md);
-  margin-bottom: 1rem;
+  padding: 0.95rem 1rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid rgba(186, 230, 253, 0.9);
+  border-radius: var(--sl-radius-lg);
+  margin-bottom: 1.2rem;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.06);
 }
 
 .sidebar-brand-header {
@@ -549,41 +554,42 @@ p, span, label, div { font-family: var(--sl-font-sans); }
 }
 
 .sidebar-brand-header strong {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #0369a1;
 }
 
 .badge-pill-mccia {
-  padding: 0.15rem 0.5rem;
-  background: #0284c7;
+  padding: 0.2rem 0.6rem;
+  background: var(--sl-primary-gradient);
   color: #ffffff;
   font-size: 0.68rem;
   font-weight: 800;
-  border-radius: 12px;
-  letter-spacing: 0.05em;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
 }
 
 .sidebar-business-name {
   color: var(--sl-ink-secondary);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  margin: 0.35rem 0 0;
+  margin: 0.4rem 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .workspace-tag-container {
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
 }
 
 .workspace-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.25rem 0.65rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 20px;
   background: var(--sl-accent-amber-light);
   color: #92400e;
@@ -604,7 +610,7 @@ p, span, label, div { font-family: var(--sl-font-sans); }
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.25rem 0.65rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 20px;
   background: var(--sl-accent-green-light);
   color: var(--sl-accent-green);
@@ -622,62 +628,82 @@ p, span, label, div { font-family: var(--sl-font-sans); }
 }
 
 .nav-heading {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--sl-ink-muted);
   text-transform: uppercase;
-  margin: 1.2rem 0.6rem 0.45rem;
+  margin: 1.4rem 0.4rem 0.6rem;
 }
 
 .st-key-workspace_navigation [data-testid="stRadioGroup"] {
-  gap: 4px;
+  gap: 6px;
 }
 
+/* Hide Radio Buttons & Radio Outer Circles completely */
+.st-key-workspace_navigation [data-testid="stRadioOption"] input[type="radio"],
+.st-key-workspace_navigation [data-testid="stRadioOption"] label > div:first-child,
+.st-key-workspace_navigation [data-testid="stRadioOption"] [data-baseweb="radio"] > div:first-child {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Navigation Item Pill Card */
 .st-key-workspace_navigation [data-testid="stRadioOption"] {
-  border-radius: var(--sl-radius-sm);
-  padding: 0.55rem 0.85rem;
+  border-radius: var(--sl-radius-md);
+  padding: 0.65rem 0.95rem;
   margin: 0;
-  min-height: 42px;
+  min-height: 44px;
   width: 100%;
-  border-left: 3px solid transparent;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  cursor: pointer;
 }
 
 .st-key-workspace_navigation [data-testid="stRadioOption"]:hover {
   background: #f1f5f9;
+  border-color: #e2e8f0;
+  transform: translateX(3px);
 }
 
+/* Active Selected Navigation Item */
 .st-key-workspace_navigation [data-testid="stRadioOption"][data-selected="true"] {
-  background: #f0f9ff;
-  border-left-color: var(--sl-primary);
-  color: var(--sl-primary-dark);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
+  border-color: transparent !important;
+  transform: translateX(4px);
 }
 
-.st-key-workspace_navigation [data-testid="stRadioOption"][data-selected="true"] p {
-  font-weight: 700;
-  color: var(--sl-primary-dark);
-}
-
-.st-key-workspace_navigation [data-testid="stRadioOption"] > div > div > div:first-child:not([data-testid]) {
-  display: none;
+.st-key-workspace_navigation [data-testid="stRadioOption"][data-selected="true"] p,
+.st-key-workspace_navigation [data-testid="stRadioOption"][data-selected="true"] [data-testid="stIconMaterial"] {
+  font-weight: 700 !important;
+  color: #ffffff !important;
 }
 
 .st-key-workspace_navigation [data-testid="stRadioOption"] p {
   font-size: 14.5px;
   font-weight: 500;
+  color: var(--sl-ink-primary);
+  margin: 0;
+  transition: color 0.15s ease;
 }
 
 .st-key-workspace_navigation [data-testid="stRadioOption"] [data-testid="stIconMaterial"] {
-  font-size: 1.25rem;
-  vertical-align: -0.2rem;
-  margin-right: 0.55rem;
+  font-size: 1.3rem;
+  vertical-align: -0.22rem;
+  margin-right: 0.65rem;
+  color: var(--sl-primary);
+  transition: color 0.15s ease;
 }
 
 .st-key-sidebar_account {
   border-top: 1px solid var(--sl-border);
-  padding-top: 1.2rem;
-  margin-top: 1rem;
+  padding-top: 1.25rem;
+  margin-top: 1.4rem;
+
 }
 
 /* ==========================================================================

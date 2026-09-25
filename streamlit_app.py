@@ -241,11 +241,12 @@ with page_content.container(key='workspace_content'):
     workspace_bar(business.get('business_name', config.BUSINESS_NAME), page, bool(demo_accounts))
     if page in extra_pages:
         runpy.run_path(str(Path(__file__).parent/'app_pages'/extra_pages[page]), init_globals={
-            'st':st,'store':store,'actor':actor,'business':business,'identity':identity,'act':act,'grid':grid,'operation_key':operation_key,
+            'st':st,'store':store,'actor':actor,'business':business,'identity':identity,'act':act,'grid':grid,'operation_key':operation_key,'config':config,
             'products':products,'product_lookup':product_lookup,'product_label':product_label,'suppliers':suppliers,'supplier_lookup':supplier_lookup,
             'supplier_label':supplier_label,'locations':locations,'location_lookup':location_lookup,'location_label':location_label,
             'pick_product':pick_product,'pick_location':pick_location,'pick_batch':pick_batch,
             'amount':amount,'quantity':quantity,'inr':inr,'csv_bytes':csv_bytes,'ValidationError':ValidationError})
+
     elif page == 'Overview':
         st.title('Inventory overview')
         st.caption('Stock on hand, replenishment and orders awaiting delivery.')

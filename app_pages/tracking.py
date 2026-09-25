@@ -1,6 +1,8 @@
 import json
 from datetime import date
+import config
 st.title('Tracking and units')
+
 pid=pick_product(key='tracked_product'); p=product_lookup[pid]
 st.caption('Use a separate SKU for each variant. Custom fields can describe size, colour, grade, drawing number or any business-specific attribute.')
 with st.form(f'options_{pid}_{p["version"]}'):
