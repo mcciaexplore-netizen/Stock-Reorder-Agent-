@@ -165,13 +165,13 @@ class Security:
         with self._auth_db() as db:
             if db.execute('SELECT 1 FROM users WHERE username=?', (username,)).fetchone():
                 raise ValidationError('Username already taken. Please choose another one.')
-            has_users = db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
-            role = 'owner' if not has_users else 'viewer'
+            role = 'owner'
             uid = db.execute("INSERT INTO users(username,name,password,role,created_at) VALUES(?,?,?,?,datetime('now'))", (username, name, hashed, role)).lastrowid
             db.execute('INSERT INTO sessions VALUES(?,?,?)', (hashlib.sha256(token.encode()).hexdigest(), uid, int(time.time()) + 8 * 3600))
             self._audit(db, name, 'user_registered', username, {'role': role})
         self.session_token = token
         return token
+
 
 
 def protect(cls):

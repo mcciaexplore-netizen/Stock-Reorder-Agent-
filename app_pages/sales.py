@@ -60,3 +60,27 @@ if inv['kind']=='invoice':
             reason=st.text_input('Customer return reason')
             submit=st.form_submit_button('Receive return and issue credit note',disabled=not store.allowed('accounts'))
         if submit:act('credit',lambda:store.credit_invoice(iid,returns,reason,actor=actor,token=operation_key('credit')),'Return received and linked credit note issued.')
+
+st.divider()
+with st.expander('🏷️ Dispatch Package QR Label Generator'):
+    import urllib.parse
+    st.write('Generate printable dispatch package QR label for this invoice:')
+    dispatch_data = {
+        "invoice_no": inv['number'],
+        "customer": inv['customer'],
+        "date": inv['invoice_date'],
+        "total_items": len(inv['lines']),
+        "total_amount_inr": amount(inv['total']),
+        "contents": [{"item": l['description'], "qty": quantity(l['qty'])} for l in inv['lines']]
+    }
+    encoded_inv = urllib.parse.quote(json.dumps(dispatch_data))
+    qr_dispatch_url = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={encoded_inv}"
+    col_a, col_b = st.columns([1, 2])
+    with col_a:
+        st.image(qr_dispatch_url, caption=f"Dispatch Tag: {inv['number']}", width=180)
+    with col_b:
+        st.markdown(f"**Dispatch Label for Invoice {inv['number']}**")
+        st.write(f"Customer: **{inv['customer']}**")
+        st.write(f"Package items: **{len(inv['lines'])} line items**")
+        st.json(dispatch_data)
+

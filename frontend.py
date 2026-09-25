@@ -127,30 +127,34 @@ def access_form(*, setup=False, demos=()):
 
 def sidebar_brand(business_name, demo):
     st.logo(str(LOGO), size='large', link='https://mcciapune.com/')
+    name_str = business_name or 'Stocklist Enterprise'
     st.html(f'''<div class="sidebar-brand-card">
         <div class="sidebar-brand-header">
             <strong>Stocklist</strong>
             <span class="badge-pill-mccia">MCCIA</span>
         </div>
-        <p class="sidebar-business-name">{escape(business_name)}</p>
+        <p class="sidebar-business-name">{escape(str(name_str))}</p>
     </div>''')
     if demo:
         st.html('<div class="workspace-tag-container"><span class="workspace-tag">Interactive Sandbox</span></div>')
 
 
 def workspace_bar(business_name, page, demo):
+    name_str = business_name or 'Stocklist Enterprise'
+    page_str = page or 'Overview'
     tag = '<span class="workspace-tag">Interactive Demo</span>' if demo else '<span class="workspace-tag-live">Live Workspace</span>'
     st.html(f'''<div class="workspace-bar">
         <div class="crumb">
-            <span class="crumb-corp">{escape(business_name)}</span>
+            <span class="crumb-corp">{escape(str(name_str))}</span>
             <span class="crumb-sep">/</span>
-            <strong class="crumb-page">{escape(page)}</strong>
+            <strong class="crumb-page">{escape(str(page_str))}</strong>
         </div>
         <div class="meta">
             {tag}
             <span class="workspace-date"><i class="date-icon">📅</i> {date.today():%d %b %Y}</span>
         </div>
     </div>''')
+
 
 
 def attention_summary(alerts):
