@@ -86,7 +86,7 @@ with col1:
 
 with col2:
     if qr_payload:
-        # Bulletproof Dynamic URL Resolution for Streamlit Cloud, local dev, & Vercel
+        # Dynamic URL Resolution for local development vs Vercel production deployment
         base_domain = getattr(config, 'APP_URL', '') if 'config' in globals() else ''
         if not base_domain:
             host_header = st.context.headers.get("Host") if hasattr(st, "context") and hasattr(st.context, "headers") and st.context.headers else None
@@ -98,21 +98,19 @@ with col2:
         else:
             public_url = f"{base_domain}/?sku={urllib.parse.quote(p['item_code'])}&batch={urllib.parse.quote(b_choice['code'])}"
 
-        
         encoded_data = urllib.parse.quote(public_url)
         qr_img_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_data}"
         
         st.markdown(f"### {qr_title}")
-        st.caption(f"🔗 Public Link: `{public_url}`")
+        st.caption(f"🔗 Public Scan URL: [{public_url}]({public_url})")
 
-
+        # Streamlit Native Native Image Display
+        st.image(qr_img_url, caption=f"Scan to view product info: {label_text}", width=220)
         
         # Thermal Barcode Sticker Badge UI
         st.html(f"""
         <div class="qr-sticker-card">
-            <div class="qr-sticker-header">
-                📦 INVENTORY STICKER
-            </div>
+            <div class="qr-sticker-header">📦 INVENTORY STICKER</div>
             <img src="{qr_img_url}" class="qr-sticker-img" alt="QR Code Sticker" />
             <div class="qr-sticker-title">{label_text}</div>
             <div class="qr-sticker-meta">SKU: {p['item_code']} | Qty: {p['stock']/1000.0:.2f} {p['unit']}</div>
@@ -124,10 +122,12 @@ with col2:
         
         # Download raw PNG bytes for direct image download
         try:
-            with urllib.request.urlopen(qr_img_url) as resp:
+            req = urllib.request.Request(qr_img_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as resp:
                 qr_png_bytes = resp.read()
         except Exception:
             qr_png_bytes = b""
+
 
         dl_col1, dl_col2 = st.columns(2)
         with dl_col1:
