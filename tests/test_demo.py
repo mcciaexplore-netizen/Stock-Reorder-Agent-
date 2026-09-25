@@ -125,11 +125,11 @@ class DemoTests(unittest.TestCase):
                 self.assertTrue(any(t.value == 'Inventory overview' for t in app.title))
                 self.assertFalse(any(b.key and b.key.startswith('demo_login_') for b in app.button))
                 if profile['role'] == 'owner':
-                    for page in ['Products', 'Purchase orders', 'Locations and reservations', 'Tracking and units',
-                                 'Assembly and jobs', 'Quotations and bills', 'Sales and invoices', 'Documents',
-                                 'Returnables and repairs', 'Reports', 'Exceptions', 'Offline entry', 'Settings']:
+                    for page in ['Products', 'Stock movements', 'Tracking and units', 'Locations and reservations',
+                                 'Purchase orders', 'Suppliers', 'Reports', 'Import and backup', 'Settings']:
                         app.radio(key='page').set_value(page).run()
                         self.assertFalse(app.exception, page)
+
                 next(b for b in app.button if b.label == 'Sign out').click().run()
                 self.assertEqual(app.title[0].value, 'Sign in to Stocklist')
                 self.assertFalse(app.dataframe)
