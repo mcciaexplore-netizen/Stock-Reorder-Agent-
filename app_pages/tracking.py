@@ -84,12 +84,18 @@ with col1:
 
 with col2:
     if qr_payload:
-        json_str = json.dumps(qr_payload, indent=2)
-        encoded_data = urllib.parse.quote(json_str)
-        # Fast Google Chart API / QR Server fallback for instant lightweight SVG/PNG rendering
+        # Public Verification Link that opens when scanned by smartphone camera or any external scanner
+        if qr_type == 'Product SKU':
+            public_url = f"http://127.0.0.1:8502/?sku={urllib.parse.quote(p['item_code'])}"
+        else:
+            public_url = f"http://127.0.0.1:8502/?sku={urllib.parse.quote(p['item_code'])}&batch={urllib.parse.quote(b_choice['code'])}"
+        
+        encoded_data = urllib.parse.quote(public_url)
         qr_img_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_data}"
         
         st.markdown(f"### {qr_title}")
+        st.caption(f"🔗 Public Link: `{public_url}`")
+
         
         # Thermal Barcode Sticker Badge UI
         st.html(f"""

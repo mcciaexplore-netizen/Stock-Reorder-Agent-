@@ -25,6 +25,36 @@ from frontend import (apply_brand, access_form, sidebar_brand, workspace_bar,
 st.set_page_config(page_title='Stocklist | MCCIA', page_icon=':material/inventory_2:', layout='wide')
 apply_brand()
 store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth_token'))
+
+# Public Scanner Verification View (No login required when scanning QR code URLs)
+query_params = st.query_params
+if 'sku' in query_params or 'product_id' in query_params:
+    public_sku = query_params.get('sku')
+    all_prods = store.products()
+    matched = [p for p in all_prods if p['item_code'].casefold() == str(public_sku).casefold()]
+    
+    st.html('''<div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.08); font-family: sans-serif;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.4rem;">📦 Product Specification & Authenticity</h2>
+            <span style="background: #ecfdf5; color: #059669; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; border: 1px solid #a7f3d0;">✓ VERIFIED PRODUCT</span>
+        </div>
+    ''')
+    if matched:
+        mp = matched[0]
+        st.markdown(f"### {mp['item_name']}")
+        st.markdown(f"**SKU:** `{mp['item_code']}` | **Category:** `{mp['category']}` | **Unit:** `{mp['unit']}`")
+        st.markdown(f"**HSN Code:** `{mp.get('hsn') or 'N/A'}`")
+        if 'batch' in query_params:
+            st.markdown(f"**Batch Code:** `{query_params['batch']}`")
+        st.success(f"Official Stocklist Item Certification · Business: {config.BUSINESS_NAME}")
+    else:
+        st.error(f"Item SKU '{public_sku}' not found in public database catalog.")
+    
+    if st.button("⬅️ Return to Main Portal"):
+        st.query_params.clear()
+        st.rerun()
+    st.stop()
+
 demo_accounts = demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
 is_demo = bool(demo_accounts)
 auth_content = st.empty()
@@ -33,6 +63,7 @@ try:
     identity = store.identity()
 except ValidationError:
     identity = None
+
 
 if not identity:
     needs_initial_setup = store.needs_setup()
@@ -122,6 +153,8 @@ def order_lines(order):
 
 
 extra_pages = {
+    'Locations and reservations': 'locations.py',
+    'Tracking and units': 'tracking.py',
     'Reports': 'reports.py',
     'Settings': 'settings.py',
 }
@@ -129,6 +162,8 @@ pages = [
     'Overview',
     'Products',
     'Stock movements',
+    'Tracking and units',
+    'Locations and reservations',
     'Purchase orders',
     'Suppliers',
     'Reports',
@@ -140,11 +175,14 @@ translations = {
     'Products': 'उत्पाद',
     'Suppliers': 'आपूर्तिकर्ता',
     'Stock movements': 'स्टॉक लेनदेन',
+    'Tracking and units': 'ट्रैकिंग और इकाइयां',
+    'Locations and reservations': 'स्थान और आरक्षण',
     'Purchase orders': 'खरीद आदेश',
     'Import and backup': 'आयात और बैकअप',
     'Reports': 'रिपोर्ट',
     'Settings': 'सेटिंग्स',
 }
+
 
 def sign_out():
     # Callbacks run before rendering so the previous role's widgets cannot survive a logout rerun.
@@ -157,8 +195,9 @@ with sidebar_content.container():
     st.html('<div class="nav-heading">WORKSPACE</div>')
     with st.container(key='workspace_navigation'):
         page = st.radio('Workspace', pages, key='page', label_visibility='collapsed',
-                        format_func=lambda p: f':material/{PAGE_ICONS[p]}: ' + (translations.get(p,p) if language=='Hindi' else p))
+                        format_func=lambda p: f':material/{PAGE_ICONS.get(p, "inventory_2")}: ' + (translations.get(p, str(p)) if language=='Hindi' else str(p)))
     with st.container(key='sidebar_account'):
+
         st.selectbox('Navigation language / भाषा', ['English','Hindi'],
                      index=int(business.get('language')=='Hindi'), key='nav_language')
         st.caption(f'{actor} · {identity["role"]}')
