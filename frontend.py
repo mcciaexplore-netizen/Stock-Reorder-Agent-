@@ -78,7 +78,7 @@ def access_form(*, setup=False, demos=()):
             </section>''')
         with right:
             with st.container(key='signin_panel'):
-                st.title('Create your Account' if is_signup else 'Sign in to Stocklist')
+                st.title('Set up Stocklist' if is_signup else 'Sign in to Stocklist')
                 st.caption('Enter your details to create a new workspace account.' if is_signup else 'Welcome back. Open your business workspace.')
                 result['feedback'] = st.empty()
                 result['is_register'] = is_signup

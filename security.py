@@ -157,6 +157,7 @@ class Security:
                 if not hashed:
                     raise ValidationError('A password is required for a new user.')
                 user_id = db.execute("INSERT INTO users(username,name,password,role,active,created_at) VALUES(?,?,?,?,?,datetime('now'))", (username,name,hashed,role,int(active))).lastrowid
+            return user_id
     def register(self, username, name, password):
         username = text(username, 'Username', required=True, limit=80).casefold()
         name = text(name, 'Name', required=True, limit=100)

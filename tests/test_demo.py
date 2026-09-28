@@ -42,11 +42,8 @@ class DemoTests(unittest.TestCase):
         self.assertTrue(seed_sample_data(self.store))
         self.assertEqual(len(self.store.products()), 13)
         self.assertEqual({o['state'] for o in self.store.orders()}, {'draft', 'sent', 'partial', 'received'})
-        self.assertEqual({b['state'] for b in self.store.bills()}, {'review', 'accepted'})
         self.assertEqual(len(self.store.invoices()), 4)
-        self.assertEqual(len(self.store.jobs()), 3)
         self.assertTrue(any(i['paid'] and i['paid'] < i['total'] for i in self.store.invoices()))
-        self.assertTrue(any(j['material_cost'] > j['budget'] for j in self.store.jobs()))
         self.assertEqual(next(p['stock'] for p in self.store.products() if p['id'] == original), 9000)
         self.store.move_stock(original, 'issue', '1', 'Later edit', actor='Owner', token='later')
         before = self.snapshot()
@@ -125,8 +122,8 @@ class DemoTests(unittest.TestCase):
                 self.assertTrue(any(t.value == 'Inventory overview' for t in app.title))
                 self.assertFalse(any(b.key and b.key.startswith('demo_login_') for b in app.button))
                 if profile['role'] == 'owner':
-                    for page in ['Products', 'Stock movements', 'Tracking and units', 'Locations and reservations',
-                                 'Purchase orders', 'Suppliers', 'Reports', 'Import and backup', 'Settings']:
+                    for page in ['Products', 'Stock movements', 'Tracking and units',
+                                 'Purchase orders', 'Suppliers', 'Settings']:
                         app.radio(key='page').set_value(page).run()
                         self.assertFalse(app.exception, page)
 

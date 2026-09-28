@@ -36,24 +36,10 @@ class WorkspaceTests(unittest.TestCase):
 
     def test_empty_workspace_and_all_pages_load(self):
         app = self.app()
-        for page in ['Overview','Products','Suppliers','Stock movements','Purchase orders','Import and backup',
-                     'Locations and reservations','Tracking and units','Assembly and jobs','Quotations and bills',
-                     'Sales and invoices','Documents','Returnables and repairs','Reports','Exceptions','Offline entry','Settings']:
+        for page in ['Overview','Products','Suppliers','Stock movements','Tracking and units','Purchase orders',
+                     'Customer orders','Work orders','Outside work tracking','Sales and invoices','Documents','Settings']:
             app.radio(key='page').set_value(page).run()
             self.assertFalse(app.exception, f'{page}: {[e.value for e in app.exception]}')
-
-    def test_sample_import_from_preview(self):
-        app = self.app()
-        app.radio(key='page').set_value('Import and backup').run()
-        next(c for c in app.checkbox if c.label=='Preview the supplied sample inventory').check().run()
-        self.assertFalse(app.exception)
-        next(c for c in app.checkbox if c.label=='I reviewed the products and opening balances.').check().run()
-        next(b for b in app.button if b.label=='Import products').click().run()
-        self.assertFalse(app.exception)
-        self.assertEqual(len(self.store.products()), 8)
-        app.radio(key='page').set_value('Overview').run()
-        self.assertEqual(app.metric[0].value, '8')
-        self.assertEqual(app.metric[1].value, '5')
 
     def test_reorder_approval_manual_placement_and_receipt(self):
         self.seed()
@@ -81,9 +67,8 @@ class WorkspaceTests(unittest.TestCase):
     def test_seeded_workspace_all_pages_load(self):
         self.seed()
         app = self.app()
-        for page in ['Products','Suppliers','Stock movements','Purchase orders','Import and backup',
-                     'Locations and reservations','Tracking and units','Assembly and jobs','Quotations and bills',
-                     'Sales and invoices','Documents','Returnables and repairs','Reports','Exceptions','Offline entry','Settings']:
+        for page in ['Overview','Products','Suppliers','Stock movements','Tracking and units','Purchase orders',
+                     'Customer orders','Work orders','Outside work tracking','Sales and invoices','Documents','Settings']:
             app.radio(key='page').set_value(page).run()
             self.assertFalse(app.exception, f'{page}: {[e.value for e in app.exception]}')
 
@@ -105,31 +90,18 @@ class WorkspaceTests(unittest.TestCase):
     def test_owner_setup_and_login_gate(self):
         app=AppTest.from_file(str(ROOT/'streamlit_app.py'),default_timeout=60).run()
         self.assertEqual(app.title[0].value,'Set up Stocklist')
-        next(t for t in app.text_input if t.label=='Owner username').input('factory')
-        next(t for t in app.text_input if t.label=='Your name').input('Factory owner')
+        next(t for t in app.text_input if t.label=='Username').input('factory')
+        next(t for t in app.text_input if t.label=='Your full name').input('Factory owner')
         next(t for t in app.text_input if t.label.startswith('Password (')).input('Long factory password 123')
         next(t for t in app.text_input if t.label=='Confirm password').input('Long factory password 123')
-        next(b for b in app.button if b.label=='Create owner account').click().run()
+        next(b for b in app.button if b.label=='Create account').click().run()
         self.assertFalse(app.exception)
         self.assertTrue(any(t.value=='Inventory overview' for t in app.title))
         next(b for b in app.button if b.label=='Sign out').click().run()
         self.assertEqual(app.title[0].value,'Sign in to Stocklist')
         self.assertFalse(app.dataframe)
 
-    def test_production_form_posts_components_and_output(self):
-        self.seed()
-        raw=self.store.products()[0]
-        output=self.store.save_product(dict(item_code='OUTPUT',item_name='Finished frame',unit='Pcs',unit_price='0',selling_price='100',reorder_level='0',reorder_qty='0'),actor='Owner',token='output')
-        self.store.save_recipe(output,[{'product_id':raw['id'],'qty':'1'}],actor='Owner')
-        app=self.app()
-        app.radio(key='page').set_value('Assembly and jobs').run()
-        next(s for s in app.selectbox if s.label=='Finished product / kit').select(output).run()
-        next(t for t in app.text_input if t.label=='Finished quantity').input('1')
-        next(t for t in app.text_input if t.label=='Assembly job / batch reference').input('WO-UI')
-        next(b for b in app.button if b.label=='Record assembly').click().run()
-        self.assertFalse(app.exception)
-        self.assertEqual(next(p['stock'] for p in self.store.products() if p['id']==output),1000)
-        self.assertEqual(next(p['stock'] for p in self.store.products() if p['id']==raw['id']),raw['stock']-1000)
+
 
     def test_sales_invoice_form_dispatches_stock(self):
         self.seed()
@@ -144,22 +116,7 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual(len(self.store.invoices()),1)
         self.assertEqual(next(p['stock'] for p in self.store.products() if p['id']==pid),before-1000)
 
-    def test_quotation_and_bill_sections_load(self):
-        self.seed()
-        product=self.store.products()[0]
-        oid=self.store.create_po(product['supplier_id'],[{'product_id':product['id'],'qty':'1','price':'10'}],actor='Owner',token='billorder')
-        self.store.approve_po(oid,actor='Owner',revision=1)
-        self.store.place_manually(oid,'Supplier confirmed',actor='Owner',revision=1)
-        app=self.app(); app.radio(key='page').set_value('Quotations and bills').run()
-        app.radio(key='purchasing_section').set_value('Supplier bill verification').run()
-        self.assertFalse(app.exception)
-        next(t for t in app.text_input if t.label=='Supplier invoice number').input('B-UI')
-        next(t for t in app.text_input if t.label.endswith('billed quantity')).input('1')
-        next(b for b in app.button if b.label=='Save bill for verification').click().run()
-        self.assertFalse(app.exception)
-        self.assertEqual(len(self.store.bills()),1)
-        next(s for s in app.selectbox if s.label=='Bill action').select('Review or correct existing bill').run()
-        self.assertTrue(any('exceeds received' in w.value for w in app.warning))
+
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+import json
 from datetime import date,timedelta
 st.title('Sales and invoices')
 customers=store.customers(); customer_lookup={c['id']:c for c in customers}

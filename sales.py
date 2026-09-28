@@ -124,7 +124,7 @@ class Sales:
 
     def invoice(self,invoice_id):
         with self.connect() as db:
-            r=db.execute('SELECT * FROM invoices WHERE id=?',(invoice_id,)).fetchone()
+            r=db.execute('SELECT i.*,c.name customer FROM invoices i JOIN customers c ON c.id=i.customer_id WHERE i.id=?',(invoice_id,)).fetchone()
             if not r:raise ValidationError('Invoice no longer exists.')
             result=dict(r); result['snapshot']=json.loads(result['snapshot'])
             result['lines']=[dict(r) for r in db.execute('''SELECT l.*,p.item_code,

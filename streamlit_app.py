@@ -184,9 +184,12 @@ def order_lines(order):
 
 
 extra_pages = {
-    'Locations and reservations': 'locations.py',
     'Tracking and units': 'tracking.py',
-    'Reports': 'reports.py',
+    'Sales and invoices': 'sales.py',
+    'Customer orders': 'customer_orders.py',
+    'Work orders': 'work_orders.py',
+    'Outside work tracking': 'jobwork.py',
+    'Documents': 'documents.py',
     'Settings': 'settings.py',
 }
 pages = [
@@ -194,25 +197,16 @@ pages = [
     'Products',
     'Stock movements',
     'Tracking and units',
-    'Locations and reservations',
     'Purchase orders',
     'Suppliers',
-    'Reports',
-    'Import and backup',
+    'Customer orders',
+    'Work orders',
+    'Outside work tracking',
+    'Sales and invoices',
+    'Documents',
     'Settings',
 ]
-translations = {
-    'Overview': 'अवलोकन',
-    'Products': 'उत्पाद',
-    'Suppliers': 'आपूर्तिकर्ता',
-    'Stock movements': 'स्टॉक लेनदेन',
-    'Tracking and units': 'ट्रैकिंग और इकाइयां',
-    'Locations and reservations': 'स्थान और आरक्षण',
-    'Purchase orders': 'खरीद आदेश',
-    'Import and backup': 'आयात और बैकअप',
-    'Reports': 'रिपोर्ट',
-    'Settings': 'सेटिंग्स',
-}
+
 
 
 def sign_out():
@@ -222,15 +216,11 @@ def sign_out():
 
 with sidebar_content.container():
     sidebar_brand(business.get('business_name', config.BUSINESS_NAME), bool(demo_accounts))
-    language = st.session_state.get('nav_language', business.get('language', 'English'))
     st.html('<div class="nav-heading">WORKSPACE</div>')
     with st.container(key='workspace_navigation'):
         page = st.radio('Workspace', pages, key='page', label_visibility='collapsed',
-                        format_func=lambda p: f':material/{PAGE_ICONS.get(p, "inventory_2")}: ' + (translations.get(p, str(p)) if language=='Hindi' else str(p)))
+                        format_func=lambda p: f':material/{PAGE_ICONS.get(p, "inventory_2")}: ' + str(p))
     with st.container(key='sidebar_account'):
-
-        st.selectbox('Navigation language / भाषा', ['English','Hindi'],
-                     index=int(business.get('language')=='Hindi'), key='nav_language')
         st.caption(f'{actor} · {identity["role"]}')
         st.button('Sign out', on_click=sign_out, width='stretch', icon=':material/logout:')
 
@@ -632,75 +622,6 @@ with page_content.container(key='workspace_content'):
         else:
             st.info('No purchase orders yet. Create a draft here or use the replenishment suggestions on Overview.')
 
-    elif page == 'Import and backup':
-        st.title('Import and backup')
-        st.subheader('Import new products')
-        st.caption('Preview the file before saving. Imports add products and opening balances; existing SKUs are rejected so an old spreadsheet cannot overwrite live stock.')
-        upload = st.file_uploader('Inventory file', type=['xlsx', 'csv'])
-        use_sample = st.checkbox('Preview the supplied sample inventory', value=False, disabled=upload is not None)
-        source_bytes = upload.getvalue() if upload else (config.INVENTORY_PATH.read_bytes() if use_sample and config.INVENTORY_PATH.exists() else None)
-        filename = upload.name if upload else str(config.INVENTORY_PATH)
-        if source_bytes is not None:
-            fingerprint = hashlib.sha256(source_bytes).hexdigest()
-            try:
-                frame = load_table(io.BytesIO(source_bytes), filename)
-                with st.expander('Map spreadsheet columns', expanded=True):
-                    mapping = {}
-                    options = ['Ignore'] + list(FIELDS)
-                    for col in frame.columns:
-                        inferred = normalize_header(col)
-                        choice = st.selectbox(str(col), options, index=options.index(inferred) if inferred in options else 0,
-                                              key=f'map_{fingerprint}_{col}')
-                        mapping[str(col)] = choice
-                records, errors = validate_table(frame, mapping)
-                existing = {p['item_code'].casefold() for p in products}
-                for row in records:
-                    if row['item_code'].casefold() in existing:
-                        errors.append(f'SKU {row["item_code"]} already exists. Edit it in Products; use a stock count to correct stock.')
-                if records:
-                    grid(records)
-                if errors:
-                    if store.allowed('catalogue'):
-                        store.record_import_issue(fingerprint, '\n'.join(errors)[:4000],actor=actor)
-                    st.error('Import blocked. Fix these issues before saving:')
-                    for error in errors[:40]:
-                        st.write('• ' + error)
-                    if len(errors) > 40:
-                        st.caption(f'{len(errors)-40} more errors. Correct the file and preview again.')
-                else:
-                    st.success(f'{len(records)} new products are ready to import.')
-                confirm = st.checkbox('I reviewed the products and opening balances.', key='confirm_'+fingerprint)
-                if st.button('Import products', type='primary', disabled=bool(errors) or not confirm):
-                    act('import_'+fingerprint, lambda: store.import_products(records, actor=actor, token=operation_key('import_'+fingerprint)),
-                        lambda count: f'Imported {count} products. Opening balances are recorded in stock history.')
-            except Exception as exc:
-                st.error(f'Unable to preview this file: {exc}')
-        template = [{'item_code':'SKU-001', 'item_name':'Example product', 'current_stock':'0', 'reorder_level':'10',
-                     'reorder_qty':'20', 'unit':'Pcs', 'unit_price':'12.50', 'selling_price':'15.00',
-                     'supplier_name':'Example supplier', 'supplier_email':'orders@example.com', 'category':'General', 'barcode':''}]
-        st.download_button('Download CSV import template', csv_bytes(template), 'inventory_template.csv', 'text/csv')
-        st.subheader('Export and backup')
-        export = [{'item_code': p['item_code'], 'item_name': p['item_name'], 'current_stock': quantity(p['stock']),
-                   'reorder_level': quantity(p['reorder_level']), 'reorder_qty': quantity(p['reorder_qty']),
-                   'unit': p['unit'], 'unit_price': amount(p['unit_price']), 'selling_price': amount(p['selling_price']),
-                   'supplier_name': p['supplier_name'] or '', 'supplier_email': p['supplier_email'] or '',
-                   'category': p['category'], 'barcode': p['barcode'] or ''} for p in products]
-        st.download_button('Export current inventory', csv_bytes(export, list(FIELDS)), 'current_inventory.csv', 'text/csv')
-        if st.button('Prepare full backup', disabled=not store.allowed('backup')):
-            st.session_state['backup_bytes'] = store.backup()
-            st.session_state['backup_date'] = date.today().isoformat()
-        if 'backup_bytes' in st.session_state:
-            st.download_button('Download prepared backup', st.session_state['backup_bytes'],
-                               f'stocklist-{st.session_state["backup_date"]}.sqlite3', 'application/octet-stream')
-            st.caption('This is a snapshot taken when you clicked Prepare full backup. Prepare again after more changes.')
-        st.caption('A full backup includes stock movements, orders and audit history. See README for offline restore instructions.')
-        with st.expander('Activity history'):
-            audit = store.audit()
-            if audit:
-                grid([{'Date (UTC)': a['created_at'], 'Operator': a['actor'], 'Action': a['action'].replace('_', ' '),
-                       'Record': a['entity'], 'Details': a['detail']} for a in audit])
-                st.download_button('Export activity history', csv_bytes(audit), 'activity_history.csv', 'text/csv')
-            else:
-                st.info('No activity yet.')
+
 
     workspace_footer()
