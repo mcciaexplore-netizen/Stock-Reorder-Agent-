@@ -29,31 +29,62 @@ store = Stocklist(config.DATABASE_PATH, session_token=st.session_state.get('auth
 # Public Scanner Verification View (No login required when scanning QR code URLs)
 query_params = st.query_params
 if 'sku' in query_params or 'product_id' in query_params:
-    public_sku = query_params.get('sku')
-    all_prods = store.products()
-    matched = [p for p in all_prods if p['item_code'].casefold() == str(public_sku).casefold()]
+    public_sku = query_params.get('sku') or query_params.get('product_id')
+    with sqlite3.connect(config.DATABASE_PATH, timeout=15) as db:
+        db.row_factory = sqlite3.Row
+        try:
+            matched = [dict(r) for r in db.execute('SELECT p.*, s.name as supplier_name FROM products p LEFT JOIN suppliers s ON p.supplier_id = s.id WHERE p.item_code = ? COLLATE NOCASE', (str(public_sku),))]
+            business = {r['key']: r['value'] for r in db.execute("SELECT * FROM settings")}
+        except sqlite3.OperationalError:
+            matched = []
+            business = {}
     
-    st.html('''<div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.08); font-family: sans-serif;">
+    st.html('''<div style="max-width: 680px; margin: 2rem auto; padding: 2.2rem; background: #ffffff; border-radius: 20px; border: 1px solid #cbd5e1; box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.1); font-family: sans-serif;">
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 1rem; margin-bottom: 1.5rem;">
-            <h2 style="margin: 0; color: #0f172a; font-size: 1.4rem;">📦 Product Specification & Authenticity</h2>
-            <span style="background: #ecfdf5; color: #059669; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; border: 1px solid #a7f3d0;">✓ VERIFIED PRODUCT</span>
+            <div>
+                <h2 style="margin: 0; color: #0f172a; font-size: 1.5rem; font-weight: 800;">📦 Product Information Card</h2>
+                <div style="font-size: 0.82rem; color: #64748b; margin-top: 2px;">Scanned via Package QR Sticker</div>
+            </div>
+            <span style="background: #ecfdf5; color: #059669; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 0.82rem; border: 1px solid #a7f3d0; letter-spacing: 0.04em;">✓ VERIFIED GENUINE</span>
         </div>
     ''')
     if matched:
         mp = matched[0]
-        st.markdown(f"### {mp['item_name']}")
-        st.markdown(f"**SKU:** `{mp['item_code']}` | **Category:** `{mp['category']}` | **Unit:** `{mp['unit']}`")
-        st.markdown(f"**HSN Code:** `{mp.get('hsn') or 'N/A'}`")
-        if 'batch' in query_params:
-            st.markdown(f"**Batch Code:** `{query_params['batch']}`")
-        st.success(f"Official Stocklist Item Certification · Business: {config.BUSINESS_NAME}")
+        st.markdown(f"## {mp['item_name']}")
+        
+        col_p1, col_p2 = st.columns(2)
+        with col_p1:
+            st.markdown(f"**SKU Code:** `{mp['item_code']}`")
+            st.markdown(f"**Category:** `{mp['category']}`")
+            st.markdown(f"**Unit of Measure:** `{mp['unit']}`")
+            st.markdown(f"**HSN / Tariff Code:** `{mp.get('hsn') or 'N/A'}`")
+        with col_p2:
+            st.markdown(f"**Barcode / GTIN:** `{mp.get('barcode') or 'N/A'}`")
+            st.markdown(f"**Selling Price:** `₹{amount(mp.get('selling_price', 0))}`")
+            st.markdown(f"**Supplier:** `{mp.get('supplier_name') or 'Verified Business Partner'}`")
+            if 'batch' in query_params:
+                st.markdown(f"**Package Batch Code:** `{query_params['batch']}`")
+
+        # Custom Fields / Attributes JSON
+        attrs = mp.get('attributes')
+        if attrs and attrs != '{}':
+            try:
+                attr_dict = json.loads(attrs) if isinstance(attrs, str) else attrs
+                if attr_dict:
+                    st.markdown("**Custom Product Specifications:**")
+                    st.json(attr_dict)
+            except Exception:
+                pass
+
+        st.success(f"🛡️ Official Item Certification · Registered to **{business.get('business_name', config.BUSINESS_NAME)}**")
     else:
-        st.error(f"Item SKU '{public_sku}' not found in public database catalog.")
+        st.error(f"❌ Product SKU '{public_sku}' was not found in the official product catalog.")
     
-    if st.button("⬅️ Return to Main Portal"):
+    if st.button("⬅️ Return to Main Portal", type="primary"):
         st.query_params.clear()
         st.rerun()
     st.stop()
+
 
 demo_accounts = demo_profiles(config.DATABASE_PATH, config.DEMO_ACCESS_PATH)
 is_demo = bool(demo_accounts)
